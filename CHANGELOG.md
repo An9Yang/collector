@@ -25,4 +25,7 @@
 - 添加 `mammoth` 库用于解析 DOCX 文件
 - 添加 `xlsx` 库用于解析电子表格
 - 添加 `rtf-parser` 库用于解析 RTF 文档
-- 添加 `file-type` 库用于检测文件类型 
+- 添加 `file-type` 库用于检测文件类型
+
+### 更新
+- 将 Header 组件中的按钮文本从 `Add Link` 改为 `Add New` 
