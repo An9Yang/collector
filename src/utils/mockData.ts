@@ -1,6 +1,7 @@
 import { Article } from '../types';
-import { getSourceFromUrl } from './sourceUtils';
+import { getSourceFromUrl, getSourceName } from './sourceUtils';
 import { v4 as uuidv4 } from 'uuid';
+import { detectContentFormat, processContent } from './formatDetection';
 
 const mockContent = `
 <div class="article-content">
@@ -61,9 +62,64 @@ export const generateMockArticle = (url: string, isRead = false): Article => {
 
 // Generate mock article from pasted content
 export const generateMockArticleFromContent = (content: string): Article => {
-  // In a real implementation, this would use AI to generate a title and summary
-  const title = content.split('\n')[0].slice(0, 60) || 'Untitled Article';
-  const summary = content.slice(0, 200) + '...';
+  // 检测内容的格式并处理
+  const format = detectContentFormat(content);
+  const processedHtml = processContent(content, format);
+  
+  // 提取标题（尝试从 HTML 或原始内容中获取第一行作为标题）
+  let title = '无标题文章';
+  
+  if (format === 'html') {
+    // 尝试从 HTML 中提取标题
+    const titleMatch = content.match(/<h1[^>]*>(.*?)<\/h1>/i) || 
+                      content.match(/<h2[^>]*>(.*?)<\/h2>/i) ||
+                      content.match(/<h3[^>]*>(.*?)<\/h3>/i) ||
+                      content.match(/<title[^>]*>(.*?)<\/title>/i);
+    
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].trim();
+    } else {
+      // 从内容中提取第一段
+      const firstParagraph = content.match(/<p[^>]*>(.*?)<\/p>/i);
+      if (firstParagraph && firstParagraph[1]) {
+        // 删除HTML标签
+        title = firstParagraph[1].replace(/<[^>]*>/g, '').trim().slice(0, 60);
+      }
+    }
+  } else if (format === 'markdown') {
+    // 从 Markdown 中提取标题
+    const titleMatch = content.match(/^#\s+(.*)/m) || 
+                      content.match(/^##\s+(.*)/m) ||
+                      content.match(/^###\s+(.*)/m);
+    
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].trim();
+    } else {
+      // 使用第一行作为标题
+      title = content.split('\n')[0].trim().slice(0, 60);
+    }
+  } else {
+    // 纯文本，使用第一行
+    title = content.split('\n')[0].trim().slice(0, 60);
+  }
+  
+  // 生成摘要（简单地提取部分内容，实际应用中可能需要 AI 生成）
+  let summary = '';
+  
+  if (format === 'html') {
+    // 提取纯文本并用作摘要
+    summary = content
+      .replace(/<[^>]*>/g, '') // 移除 HTML 标签
+      .replace(/\s+/g, ' ')    // 合并空白字符
+      .trim()
+      .slice(0, 200) + '...';
+  } else {
+    // Markdown 或纯文本
+    summary = content
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 200) + '...';
+  }
   
   return {
     id: uuidv4(),
@@ -73,7 +129,7 @@ export const generateMockArticleFromContent = (content: string): Article => {
     source: 'other',
     createdAt: new Date().toISOString(),
     isRead: false,
-    content: `<div class="article-content">${content.split('\n').map(p => `<p>${p}</p>`).join('\n')}</div>`,
+    content: processedHtml, // 使用处理后的 HTML 内容
     coverImage: "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
   };
 };
