@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Plus, Moon, Sun, LogOut, LogIn } from 'lucide-react';
+import { Menu, Plus, Moon, Sun } from 'lucide-react';
 import Button from '../ui/Button';
 
 interface HeaderProps {
   onAddLinkClick: () => void;
-  isAuthenticated: boolean;
-  onSignOutClick: () => void;
-  onSignInClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  onAddLinkClick, 
-  isAuthenticated,
-  onSignOutClick,
-  onSignInClick
-}) => {
+const Header: React.FC<HeaderProps> = ({ onAddLinkClick }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -56,35 +48,14 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4">
-          {isAuthenticated ? (
-            <>
-              <Button 
-                onClick={onAddLinkClick} 
-                variant="primary"
-                className="transition-transform hover:scale-105"
-              >
-                <Plus size={18} className="mr-2" />
-                Add Link
-              </Button>
-              <Button
-                onClick={onSignOutClick}
-                variant="outline"
-                size="sm"
-              >
-                <LogOut size={16} className="mr-2" />
-                Sign Out
-              </Button>
-            </>
-          ) : (
-            <Button 
-              onClick={onSignInClick} 
-              variant="primary"
-              className="transition-transform hover:scale-105"
-            >
-              <LogIn size={18} className="mr-2" />
-              Sign In
-            </Button>
-          )}
+          <Button 
+            onClick={onAddLinkClick} 
+            variant="primary"
+            className="transition-transform hover:scale-105"
+          >
+            <Plus size={18} className="mr-2" />
+            Add Link
+          </Button>
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -109,44 +80,17 @@ const Header: React.FC<HeaderProps> = ({
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg">
           <div className="container mx-auto px-4 py-3 space-y-3">
-            {isAuthenticated ? (
-              <>
-                <Button 
-                  onClick={() => {
-                    onAddLinkClick();
-                    setIsMobileMenuOpen(false);
-                  }} 
-                  variant="primary"
-                  fullWidth
-                >
-                  <Plus size={18} className="mr-2" />
-                  Add Link
-                </Button>
-                <Button 
-                  onClick={() => {
-                    onSignOutClick();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  variant="outline"
-                  fullWidth
-                >
-                  <LogOut size={18} className="mr-2" />
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <Button 
-                onClick={() => {
-                  onSignInClick();
-                  setIsMobileMenuOpen(false);
-                }}
-                variant="primary"
-                fullWidth
-              >
-                <LogIn size={18} className="mr-2" />
-                Sign In
-              </Button>
-            )}
+            <Button 
+              onClick={() => {
+                onAddLinkClick();
+                setIsMobileMenuOpen(false);
+              }} 
+              variant="primary"
+              fullWidth
+            >
+              <Plus size={18} className="mr-2" />
+              Add Link
+            </Button>
             <Button 
               onClick={toggleDarkMode} 
               variant="secondary"

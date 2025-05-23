@@ -10,9 +10,6 @@ interface ArticlesContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   user: { id: string } | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
   addArticle: (url: string) => Promise<void>;
   addContent: (content: string) => Promise<void>;
   getArticleById: (id: string) => Article | undefined;
@@ -34,54 +31,29 @@ interface ArticlesProviderProps {
   children: ReactNode;
 }
 
+// Use a fixed ID for all operations - since we're removing auth
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<{ id: string } | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Always set authenticated to true and use a fixed user ID
+  const [user] = useState<{ id: string }>({ id: GUEST_USER_ID });
+  const [isAuthenticated] = useState(true);
 
-  // Check authentication state on load
+  // Load articles on initial load
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        setUser({ id: data.user.id });
-        setIsAuthenticated(true);
-        fetchArticles(data.user.id);
-      }
-    };
-    
-    getUser();
-    
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          setUser({ id: session.user.id });
-          setIsAuthenticated(true);
-          fetchArticles(session.user.id);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setIsAuthenticated(false);
-          setArticles([]);
-        }
-      }
-    );
-    
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    fetchArticles();
   }, []);
   
-  const fetchArticles = async (userId: string) => {
+  const fetchArticles = async () => {
     setIsLoading(true);
     
     try {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
@@ -113,95 +85,11 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        // Handle specific error types
-        if (error.message.includes('Invalid login credentials')) {
-          throw new Error('Email or password is incorrect. Please try again.');
-        } else {
-          throw error;
-        }
-      }
-      
-      if (data.user) {
-        setUser({ id: data.user.id });
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const signUp = async (email: string, password: string) => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-      
-      if (error) {
-        // Handle specific error types for signup
-        if (error.message.includes('already registered')) {
-          throw new Error('This email is already registered. Please sign in instead.');
-        } else {
-          throw error;
-        }
-      }
-      
-      if (data.user) {
-        // User is created but might need email confirmation
-        // depending on Supabase settings
-        return;
-      }
-    } catch (error) {
-      console.error('Error signing up:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const signOut = async () => {
-    setIsLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      setIsAuthenticated(false);
-      setArticles([]);
-      setCurrentArticle(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const addArticle = async (url: string) => {
-    if (!user) {
-      throw new Error('User must be authenticated to add articles');
-    }
-    
     setIsLoading(true);
     
     try {
-      // For now, we'll generate a mock article based on the URL
-      // In a production app, you would fetch metadata from the URL
+      // Generate a mock article based on the URL
       const mockArticle = generateMockArticle(url);
       
       // Insert into Supabase
@@ -217,7 +105,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
           is_read: false,
           content: mockArticle.content || null,
           cover_image: mockArticle.coverImage || null,
-          user_id: user.id
+          user_id: GUEST_USER_ID
         })
         .select()
         .single();
@@ -249,10 +137,6 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   };
 
   const addContent = async (content: string) => {
-    if (!user) {
-      throw new Error('User must be authenticated to add content');
-    }
-    
     setIsLoading(true);
     
     try {
@@ -271,7 +155,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
           is_read: false,
           content: mockArticle.content || null,
           cover_image: mockArticle.coverImage || null,
-          user_id: user.id
+          user_id: GUEST_USER_ID
         })
         .select()
         .single();
@@ -307,8 +191,6 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   };
 
   const markAsRead = async (id: string) => {
-    if (!user) return;
-    
     // Update locally first for immediate UI feedback
     setArticles(prev =>
       prev.map(article =>
@@ -326,14 +208,13 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       const { error } = await supabase
         .from('articles')
         .update({ is_read: true })
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
         
       if (error) throw error;
     } catch (error) {
       console.error('Error marking article as read:', error);
       // Revert the local state if the update fails
-      fetchArticles(user.id);
+      fetchArticles();
     }
   };
 
@@ -345,9 +226,6 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         isLoading,
         isAuthenticated,
         user,
-        signIn,
-        signUp,
-        signOut,
         addArticle,
         addContent,
         getArticleById,
