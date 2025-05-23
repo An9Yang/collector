@@ -5,9 +5,10 @@ import ArticleCard from './ArticleCard';
 interface ArticleListProps {
   articles: Article[];
   onArticleClick: (id: string) => void;
+  onDeleteArticle: (id: string) => void;
 }
 
-const ArticleList: React.FC<ArticleListProps> = ({ articles, onArticleClick }) => {
+const ArticleList: React.FC<ArticleListProps> = ({ articles, onArticleClick, onDeleteArticle }) => {
   if (articles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -27,6 +28,7 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles, onArticleClick }) =
           key={article.id} 
           article={article} 
           onClick={onArticleClick}
+          onDelete={onDeleteArticle}
           index={index}
         />
       ))}

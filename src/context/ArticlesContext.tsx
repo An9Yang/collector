@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Article } from '../types';
-import { getMockArticles, generateMockArticle, generateMockArticleFromContent } from '../utils/mockData';
-import { supabase } from '../lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { Article, ArticleInsert } from '../types';
+import { LocalStorageService } from '../services/localStorageService';
+import { ArticleService } from '../services/articleService';
 
 interface ArticlesContextType {
   articles: Article[];
   currentArticle: Article | null;
   isLoading: boolean;
-  isAuthenticated: boolean;
-  user: { id: string } | null;
   addArticle: (url: string) => Promise<void>;
   addContent: (content: string) => Promise<void>;
   getArticleById: (id: string) => Article | undefined;
   setCurrentArticle: (article: Article | null) => void;
-  markAsRead: (id: string) => void;
+  markAsRead: (id: string) => Promise<void>;
+  deleteArticle: (id: string) => Promise<void>;
+  loadArticles: () => Promise<void>;
+  storageMode: 'supabase' | 'local';
 }
 
 const ArticlesContext = createContext<ArticlesContextType | undefined>(undefined);
@@ -31,106 +31,145 @@ interface ArticlesProviderProps {
   children: ReactNode;
 }
 
-// Use a fixed ID for all operations - since we're removing auth
-const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
-
 export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  // Always set authenticated to true and use a fixed user ID
-  const [user] = useState<{ id: string }>({ id: GUEST_USER_ID });
-  const [isAuthenticated] = useState(true);
+  const [storageMode, setStorageMode] = useState<'supabase' | 'local'>('local');
 
-  // Load articles on initial load
-  useEffect(() => {
-    fetchArticles();
-  }, []);
-  
-  const fetchArticles = async () => {
-    setIsLoading(true);
-    
+  // 智能检测存储后端并直接加载数据
+  const detectStorageBackend = async (): Promise<'supabase' | 'local'> => {
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
+      console.log('🔍 检测存储后端...');
       
-      if (data) {
-        // Transform Supabase data to match our application model
-        const transformedArticles: Article[] = data.map(article => ({
-          id: article.id,
-          url: article.url,
-          title: article.title,
-          summary: article.summary,
-          source: article.source,
-          createdAt: article.created_at,
-          isRead: article.is_read,
-          content: article.content || undefined,
-          coverImage: article.cover_image || undefined
-        }));
-        
-        setArticles(transformedArticles);
-      }
+      // 尝试连接 Supabase 并获取数据（忽略返回值，只测试连接）
+      await ArticleService.getArticles();
+      console.log('✅ Supabase 连接成功，使用云存储');
+      return 'supabase';
     } catch (error) {
-      console.error('Error fetching articles:', error);
-      // Fallback to mock data for development purposes
-      if (process.env.NODE_ENV === 'development') {
-        setArticles(getMockArticles());
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log('⚠️ Supabase 不可用，切换到本地存储:', errorMessage);
+      return 'local';
+    }
+  };
+
+  // 获取存储服务
+  const getStorageService = (mode: 'supabase' | 'local') => {
+    return mode === 'supabase' ? ArticleService : LocalStorageService;
+  };
+
+  // Load articles from specific storage backend
+  const loadArticlesFromStorage = async (mode: 'supabase' | 'local') => {
+    try {
+      const service = getStorageService(mode);
+      const data = await service.getArticles();
+      console.log(`📚 从${mode === 'supabase' ? '云端' : '本地'}加载了 ${data.length} 篇文章`);
+      setArticles(data);
+      return data;
+    } catch (error) {
+      console.error(`Error loading articles from ${mode}:`, error);
+      throw error;
+    }
+  };
+
+  // 公共的 loadArticles 函数
+  const loadArticles = async () => {
+    setIsLoading(true);
+    try {
+      await loadArticlesFromStorage(storageMode);
+    } catch (error) {
+      console.error('Error loading articles:', error);
+      
+      // 如果 Supabase 失败，尝试切换到本地存储
+      if (storageMode === 'supabase') {
+        console.log('🔄 切换到本地存储...');
+        setStorageMode('local');
+        await loadArticlesFromStorage('local');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 初始化：检测存储后端并加载数据
+  useEffect(() => {
+    const initialize = async () => {
+      setIsLoading(true);
+      try {
+        // 检测存储模式
+        const detectedMode = await detectStorageBackend();
+        setStorageMode(detectedMode);
+        
+        // 直接加载对应存储的数据
+        await loadArticlesFromStorage(detectedMode);
+      } catch (error) {
+        console.error('Initialization error:', error);
+        // 如果都失败了，至少确保状态是本地模式
+        setStorageMode('local');
+        try {
+          await loadArticlesFromStorage('local');
+        } catch (localError) {
+          console.error('Even local storage failed:', localError);
+          setArticles([]);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initialize();
+  }, []); // 只在组件挂载时执行一次
+
   const addArticle = async (url: string) => {
     setIsLoading(true);
-    
     try {
-      // Generate a mock article based on the URL
-      const mockArticle = generateMockArticle(url);
+      // 从 URL 中提取基本信息
+      let title = `Article from ${new URL(url).hostname}`;
+      let summary = `Summary for article from ${url}`;
       
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('articles')
-        .insert({
-          id: uuidv4(),
-          url: mockArticle.url,
-          title: mockArticle.title,
-          summary: mockArticle.summary,
-          source: mockArticle.source,
-          created_at: new Date().toISOString(),
-          is_read: false,
-          content: mockArticle.content || null,
-          cover_image: mockArticle.coverImage || null,
-          user_id: GUEST_USER_ID
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
+      // 尝试检测来源
+      let source: 'wechat' | 'linkedin' | 'reddit' | 'other' = 'other';
+      const hostname = new URL(url).hostname.toLowerCase();
       
-      if (data) {
-        // Add the newly created article to the state
-        const newArticle: Article = {
-          id: data.id,
-          url: data.url,
-          title: data.title,
-          summary: data.summary,
-          source: data.source,
-          createdAt: data.created_at,
-          isRead: data.is_read,
-          content: data.content || undefined,
-          coverImage: data.cover_image || undefined
-        };
-        
-        setArticles(prev => [newArticle, ...prev]);
+      if (hostname.includes('linkedin')) {
+        source = 'linkedin';
+        title = 'LinkedIn Article';
+      } else if (hostname.includes('reddit')) {
+        source = 'reddit';
+        title = 'Reddit Post';
+      } else if (hostname.includes('weixin') || hostname.includes('mp.weixin')) {
+        source = 'wechat';
+        title = 'WeChat Article';
       }
+
+      const articleData: ArticleInsert = {
+        url,
+        title,
+        summary,
+        source,
+        content: '',
+        is_read: false,
+      };
+
+      const service = getStorageService(storageMode);
+      const newArticle = await service.createArticle(articleData);
+      
+      // Add to the beginning of the array
+      setArticles((prev) => [newArticle, ...prev]);
+      
+      return Promise.resolve();
     } catch (error) {
       console.error('Error adding article:', error);
-      throw error;
+      
+      // 如果 Supabase 失败，尝试本地存储
+      if (storageMode === 'supabase') {
+        console.log('🔄 添加失败，尝试本地存储...');
+        setStorageMode('local');
+        // 递归调用，使用本地存储重试
+        return addArticle(url);
+      }
+      
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
     }
@@ -138,49 +177,84 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
 
   const addContent = async (content: string) => {
     setIsLoading(true);
-    
     try {
-      const mockArticle = generateMockArticleFromContent(content);
+      // 智能提取标题，清理 HTML 标签
+      let title = 'Untitled Content';
       
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('articles')
-        .insert({
-          id: uuidv4(),
-          url: mockArticle.url || 'direct-content', // Use a placeholder for direct content
-          title: mockArticle.title,
-          summary: mockArticle.summary,
-          source: 'other', // For pasted content
-          created_at: new Date().toISOString(),
-          is_read: false,
-          content: mockArticle.content || null,
-          cover_image: mockArticle.coverImage || null,
-          user_id: GUEST_USER_ID
-        })
-        .select()
-        .single();
-        
-      if (error) throw error;
+      // 首先尝试从 HTML 标签中提取标题
+      const titleMatches = [
+        content.match(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/i),
+        content.match(/<title[^>]*>(.*?)<\/title>/i),
+        content.match(/^#{1,6}\s+(.+)/m) // Markdown 标题
+      ];
       
-      if (data) {
-        // Add the newly created article to the state
-        const newArticle: Article = {
-          id: data.id,
-          url: data.url,
-          title: data.title,
-          summary: data.summary,
-          source: data.source,
-          createdAt: data.created_at,
-          isRead: data.is_read,
-          content: data.content || undefined,
-          coverImage: data.cover_image || undefined
-        };
-        
-        setArticles(prev => [newArticle, ...prev]);
+      for (const match of titleMatches) {
+        if (match && match[1]) {
+          title = match[1].replace(/<[^>]*>/g, '').trim();
+          break;
+        }
       }
+      
+      // 如果没有找到明确的标题标签，使用第一行并清理 HTML
+      if (title === 'Untitled Content') {
+        const lines = content.split('\n').filter(line => line.trim());
+        if (lines.length > 0) {
+          title = lines[0]
+            .replace(/<[^>]*>/g, '') // 移除所有 HTML 标签
+            .replace(/&[a-z]+;/gi, '') // 移除 HTML 实体
+            .trim()
+            .slice(0, 100); // 限制长度
+          
+          if (!title) {
+            title = 'Untitled Content';
+          }
+        }
+      }
+
+      // 智能提取摘要
+      let summary = 'No summary available';
+      const textContent = content
+        .replace(/<[^>]*>/g, ' ') // 移除 HTML 标签
+        .replace(/\s+/g, ' ') // 合并空白字符
+        .trim();
+      
+      if (textContent.length > title.length + 10) {
+        // 跳过标题部分，提取后续内容作为摘要
+        const summaryContent = textContent.substring(title.length).trim();
+        summary = summaryContent.slice(0, 200);
+        if (summaryContent.length > 200) {
+          summary += '...';
+        }
+      }
+
+      const articleData: ArticleInsert = {
+        url: '',
+        title,
+        summary,
+        source: 'other',
+        content,
+        is_read: false,
+      };
+
+      const service = getStorageService(storageMode);
+      const newArticle = await service.createArticle(articleData);
+      
+      // Add to the beginning of the array
+      setArticles((prev) => [newArticle, ...prev]);
+      
+      return Promise.resolve();
     } catch (error) {
       console.error('Error adding content:', error);
-      throw error;
+      
+      // 如果 Supabase 失败，尝试本地存储
+      if (storageMode === 'supabase') {
+        console.log('🔄 添加失败，尝试本地存储...');
+        setStorageMode('local');
+        // 递归调用，使用本地存储重试
+        return addContent(content);
+      }
+      
+      return Promise.reject(error);
     } finally {
       setIsLoading(false);
     }
@@ -191,30 +265,61 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   };
 
   const markAsRead = async (id: string) => {
-    // Update locally first for immediate UI feedback
-    setArticles(prev =>
-      prev.map(article =>
-        article.id === id ? { ...article, isRead: true } : article
-      )
-    );
-    
-    // Also update current article if it's the one being marked
-    if (currentArticle && currentArticle.id === id) {
-      setCurrentArticle({ ...currentArticle, isRead: true });
-    }
-    
-    // Update in Supabase
     try {
-      const { error } = await supabase
-        .from('articles')
-        .update({ is_read: true })
-        .eq('id', id);
-        
-      if (error) throw error;
+      // Update in storage
+      const service = getStorageService(storageMode);
+      await service.markAsRead(id);
+      
+      // Update local state
+      setArticles((prev) =>
+        prev.map((article) =>
+          article.id === id ? { ...article, is_read: true } : article
+        )
+      );
+      
+      // Also update current article if it's the one being marked
+      if (currentArticle && currentArticle.id === id) {
+        setCurrentArticle({ ...currentArticle, is_read: true });
+      }
     } catch (error) {
       console.error('Error marking article as read:', error);
-      // Revert the local state if the update fails
-      fetchArticles();
+      
+      // 如果 Supabase 失败，尝试本地存储
+      if (storageMode === 'supabase') {
+        console.log('🔄 操作失败，切换到本地存储...');
+        setStorageMode('local');
+        return markAsRead(id);
+      }
+    }
+  };
+
+  const deleteArticle = async (id: string) => {
+    setIsLoading(true);
+    try {
+      // Update in storage
+      const service = getStorageService(storageMode);
+      await service.deleteArticle(id);
+      
+      // Update local state
+      setArticles((prev) =>
+        prev.filter((article) => article.id !== id)
+      );
+      
+      // Also update current article if it's the one being deleted
+      if (currentArticle && currentArticle.id === id) {
+        setCurrentArticle(null);
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      
+      // 如果 Supabase 失败，尝试本地存储
+      if (storageMode === 'supabase') {
+        console.log('🔄 操作失败，切换到本地存储...');
+        setStorageMode('local');
+        return deleteArticle(id);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -224,13 +329,14 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         articles,
         currentArticle,
         isLoading,
-        isAuthenticated,
-        user,
         addArticle,
         addContent,
         getArticleById,
         setCurrentArticle,
         markAsRead,
+        deleteArticle,
+        loadArticles,
+        storageMode,
       }}
     >
       {children}

@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({ onAddLinkClick }) => {
             className="transition-transform hover:scale-105"
           >
             <Plus size={18} className="mr-2" />
-            Add Link
+            Add New
           </Button>
           <button
             onClick={toggleDarkMode}
@@ -89,7 +89,7 @@ const Header: React.FC<HeaderProps> = ({ onAddLinkClick }) => {
               fullWidth
             >
               <Plus size={18} className="mr-2" />
-              Add Link
+              Add New
             </Button>
             <Button 
               onClick={toggleDarkMode} 

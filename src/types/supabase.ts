@@ -16,11 +16,12 @@ export interface Database {
           title: string
           summary: string
           source: 'wechat' | 'linkedin' | 'reddit' | 'other'
-          created_at: string
-          is_read: boolean
           content: string | null
           cover_image: string | null
-          user_id: string
+          tags: string[] | null
+          is_read: boolean
+          created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -28,11 +29,12 @@ export interface Database {
           title: string
           summary: string
           source: 'wechat' | 'linkedin' | 'reddit' | 'other'
-          created_at?: string
-          is_read?: boolean
           content?: string | null
           cover_image?: string | null
-          user_id: string
+          tags?: string[] | null
+          is_read?: boolean
+          created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -40,12 +42,14 @@ export interface Database {
           title?: string
           summary?: string
           source?: 'wechat' | 'linkedin' | 'reddit' | 'other'
-          created_at?: string
-          is_read?: boolean
           content?: string | null
           cover_image?: string | null
-          user_id?: string
+          tags?: string[] | null
+          is_read?: boolean
+          created_at?: string
+          updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -55,6 +59,9 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
