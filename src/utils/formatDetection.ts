@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 /**
  * 内容格式类型
  */
-export type ContentFormat = 'html' | 'markdown' | 'plaintext' | 'docx' | 'xlsx' | 'rtf';
+export type ContentFormat = 'html' | 'markdown' | 'plaintext' | 'docx' | 'xlsx' | 'rtf' | 'url';
 
 /**
  * 二进制数据检测结果
@@ -92,6 +92,26 @@ export const detectFormatFromPaste = async (e: ClipboardEvent): Promise<ContentF
   
   // 回退到文本内容检测
   const text = e.clipboardData?.getData('text/plain') || '';
+  return detectContentFormat(text);
+};
+
+/**
+ * 从文本字符串中检测格式
+ * 这个函数是detectFormatFromPaste的简化版，直接接受文本字符串
+ * 主要用于从普通文本检测格式，而不是从剪贴板事件
+ */
+export const detectFormatFromText = (text: string): ContentFormat => {
+  // 检测是否是URL
+  try {
+    new URL(text);
+    // 检查URL是否看起来像一个有效的网页URL
+    if (text.match(/^https?:\/\/.+/) && !text.match(/\.(jpg|jpeg|png|gif|bmp|svg|pdf|mp3|mp4|zip|rar|exe)$/i)) {
+      return 'url';
+    }
+  } catch (e) {
+    // 不是URL，继续其他检测
+  }
+  
   return detectContentFormat(text);
 };
 
