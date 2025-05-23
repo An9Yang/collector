@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, HelpCircle } from 'lucide-react';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { useArticles } from '../../context/ArticlesContext';
@@ -114,6 +114,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   : 'Already have an account? Sign in'}
               </button>
             </div>
+
+            {mode === 'signin' && (
+              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 border-t pt-4 border-gray-200 dark:border-gray-700">
+                <HelpCircle size={14} />
+                <p>
+                  Make sure you've registered with this email and that your password is correct. 
+                  Password is case-sensitive.
+                </p>
+              </div>
+            )}
           </form>
         </div>
       </div>

@@ -122,7 +122,14 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        // Handle specific error types
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Email or password is incorrect. Please try again.');
+        } else {
+          throw error;
+        }
+      }
       
       if (data.user) {
         setUser({ id: data.user.id });
@@ -145,7 +152,14 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        // Handle specific error types for signup
+        if (error.message.includes('already registered')) {
+          throw new Error('This email is already registered. Please sign in instead.');
+        } else {
+          throw error;
+        }
+      }
       
       if (data.user) {
         // User is created but might need email confirmation
