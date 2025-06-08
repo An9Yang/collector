@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Article, ArticleInsert } from '../types';
 import { ArticleService } from '../services/articleService';
+import { testSupabaseConnection } from '../config/supabase';
 
 interface ArticlesContextType {
   articles: Article[];
   currentArticle: Article | null;
   isLoading: boolean;
+  connectionError: string | null;
   addArticle: (url: string) => Promise<void>;
   addContent: (content: string) => Promise<void>;
   getArticleById: (id: string) => Article | undefined;
@@ -13,6 +15,7 @@ interface ArticlesContextType {
   markAsRead: (id: string) => Promise<void>;
   deleteArticle: (id: string) => Promise<void>;
   loadArticles: () => Promise<void>;
+  retryConnection: () => Promise<void>;
 }
 
 const ArticlesContext = createContext<ArticlesContextType | undefined>(undefined);
@@ -33,19 +36,34 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   const [articles, setArticles] = useState<Article[]>([]);
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const loadArticles = async () => {
     setIsLoading(true);
+    setConnectionError(null);
+    
     try {
+      // First test the connection
+      const connectionOk = await testSupabaseConnection();
+      if (!connectionOk) {
+        throw new Error('Unable to connect to the database. Please check your internet connection.');
+      }
+
       const data = await ArticleService.getArticles();
       console.log(`📚 从 Supabase 加载了 ${data.length} 篇文章`);
       setArticles(data);
     } catch (error) {
       console.error('Error loading articles from Supabase:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setConnectionError(errorMessage);
       setArticles([]); // 加载失败则设置为空数组
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const retryConnection = async () => {
+    await loadArticles();
   };
 
   // 初始化：直接从 Supabase 加载数据
@@ -55,6 +73,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
 
   const addArticle = async (url: string) => {
     setIsLoading(true);
+    setConnectionError(null);
+    
     try {
       let title = `Article from ${new URL(url).hostname}`;
       let summary = `Summary for article from ${url}`;
@@ -85,7 +105,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       setArticles((prev) => [newArticle, ...prev]);
     } catch (error) {
       console.error('Error adding article to Supabase:', error);
-      // 不再回退到本地存储
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add article';
+      setConnectionError(errorMessage);
       throw error; // 重新抛出错误，让调用者处理
     } finally {
       setIsLoading(false);
@@ -94,6 +115,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
 
   const addContent = async (content: string) => {
     setIsLoading(true);
+    setConnectionError(null);
+    
     try {
       let title = 'Untitled Content';
       const titleMatches = [
@@ -143,7 +166,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       setArticles((prev) => [newArticle, ...prev]);
     } catch (error) {
       console.error('Error adding content to Supabase:', error);
-      // 不再回退到本地存储
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add content';
+      setConnectionError(errorMessage);
       throw error; // 重新抛出错误
     } finally {
       setIsLoading(false);
@@ -155,7 +179,9 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   };
 
   const markAsRead = async (id: string) => {
-    setIsLoading(true); // 添加加载状态
+    setIsLoading(true);
+    setConnectionError(null);
+    
     try {
       await ArticleService.markAsRead(id);
       setArticles((prev) =>
@@ -168,15 +194,18 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       }
     } catch (error) {
       console.error('Error marking article as read in Supabase:', error);
-      // 不再回退
+      const errorMessage = error instanceof Error ? error.message : 'Failed to mark as read';
+      setConnectionError(errorMessage);
       throw error;
     } finally {
-      setIsLoading(false); // 结束加载状态
+      setIsLoading(false);
     }
   };
 
   const deleteArticle = async (id: string) => {
     setIsLoading(true);
+    setConnectionError(null);
+    
     try {
       await ArticleService.deleteArticle(id);
       setArticles((prev) => prev.filter((article) => article.id !== id));
@@ -185,7 +214,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       }
     } catch (error) {
       console.error('Error deleting article from Supabase:', error);
-      // 不再回退
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete article';
+      setConnectionError(errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
@@ -198,6 +228,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         articles,
         currentArticle,
         isLoading,
+        connectionError,
         addArticle,
         addContent,
         getArticleById,
@@ -205,6 +236,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         markAsRead,
         deleteArticle,
         loadArticles,
+        retryConnection,
       }}
     >
       {children}
