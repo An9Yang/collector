@@ -1,16 +1,29 @@
-import { useState } from 'react';
-import Header from './components/core/Header';
+import { useState, useEffect } from 'react';
 import ArticleList from './components/articles/ArticleList';
 import ArticleView from './components/articles/ArticleView';
 import AddLinkModal from './components/articles/AddLinkModal';
 import { ArticlesProvider, useArticles } from './context/ArticlesContext';
-import ChatPanel from './components/ChatPanel'; // Added import for ChatPanel
+import ChatPanel from './components/ChatPanel';
 import Button from './components/ui/Button';
-import { Plus } from 'lucide-react';
+import { Plus, Moon, Sun } from 'lucide-react';
 
 function Main() {
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle } = useArticles();
+
+  // 主题切换逻辑
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const handleAddLink = async (url: string) => {
     try {
@@ -50,26 +63,26 @@ function Main() {
   };
 
   return (
-    // Changed to flex flex-col and h-screen for full height layout
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <Header />
+    <div className="h-screen flex bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       
-      {/* New container for main content and chat panel */}
-      <div className="flex flex-1 overflow-hidden pt-16"> {/* Takes remaining space, handles overflow */}
-        
-        {/* Main content area (left side) - adjusted padding and added overflow-y-auto */}
-        <main className="flex-grow container mx-auto px-4 py-6 overflow-y-auto"> 
-          {currentArticle ? (
-          <ArticleView 
-            article={currentArticle} 
-            onBack={handleBackToList} 
-            onMarkAsRead={markAsRead}
-            onDelete={handleDeleteArticle}
-          />
-        ) : (
-          <> {/* Use a fragment to group siblings */}
-            <div className="flex justify-between items-center mb-6"> {/* Title and button container */}
-              <h2 className="text-2xl font-bold">My Saved Articles</h2>
+      {/* Left Content Area - Reading Zone */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Left Header */}
+        <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center">
+              <span className="mr-2">📋</span>
+              ClipNote
+            </h1>
+            {!currentArticle && (
+              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                My Saved Articles
+              </h2>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            {!currentArticle && (
               <Button 
                 onClick={() => setIsAddLinkModalOpen(true)} 
                 variant="primary"
@@ -78,20 +91,41 @@ function Main() {
                 <Plus size={18} className="mr-2" />
                 Add New
               </Button>
-            </div>
-            <ArticleList 
-              articles={articles} 
-              onArticleClick={handleArticleClick}
-              onDeleteArticle={handleDeleteArticle}
-            />
-          </>
-        )}
-        </main>
+            )}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
+        </header>
 
-        {/* Chat Panel (right side) */}
-        <aside className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
-          <ChatPanel currentArticle={currentArticle} articles={articles} /> {/* ChatPanel has h-full, so it will fill this aside */}
-        </aside>
+        {/* Left Main Content */}
+        <main className="flex-1 overflow-y-auto"> 
+          {currentArticle ? (
+            <ArticleView 
+              article={currentArticle} 
+              onBack={handleBackToList} 
+              onMarkAsRead={markAsRead}
+              onDelete={handleDeleteArticle}
+            />
+          ) : (
+            <div className="container mx-auto px-4 py-6">
+              <ArticleList 
+                articles={articles} 
+                onArticleClick={handleArticleClick}
+                onDeleteArticle={handleDeleteArticle}
+              />
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Right Content Area - Chat Zone */}
+      <div className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
+        <ChatPanel currentArticle={currentArticle} articles={articles} />
       </div>
 
       <AddLinkModal 
