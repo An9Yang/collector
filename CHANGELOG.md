@@ -3,6 +3,11 @@
 ## [未发布版本] - 2025-05-23 (最新)
 
 ### 新增
+- **主页AI功能：文章列表上下文感知 (阶段五)**:
+  - 修改 `App.tsx` 以将完整的 `articles` 列表传递给 `ChatPanel` 组件。
+  - 更新 `ChatPanel.tsx` 以接收 `articles` prop。
+  - 当用户在主页（文章列表页）提问时，`ChatPanel` 会将收藏的文章列表中的前10篇文章的标题和摘要（摘要限制长度）作为系统消息发送给 Azure OpenAI，为AI提供关于整个收藏集的上下文。
+
 - **详情页AI功能：文章上下文感知 (阶段四)**:
   - 修改 `App.tsx` 以将当前查看的文章 (`currentArticle`) 传递给 `ChatPanel` 组件。
   - 更新 `ChatPanel.tsx` 以接收 `currentArticle` prop。

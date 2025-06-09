@@ -4,9 +4,10 @@ import { getAzureOpenAIChatCompletion, ChatMessage } from '../services/aiService
 
 interface ChatPanelProps {
   currentArticle: Article | null;
+  articles: Article[]; // Add articles prop
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle, articles }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,43 +40,68 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle }) => {
     if (userInput.trim() === '' || isLoading) return;
 
     const newUserMessage: ChatMessage = { role: 'user', content: userInput.trim() };
+    // Optimistically update UI with user's message *before* API call
+    // The `messages` state used later for API call will be the one *before* this update.
     setMessages(prevMessages => [...prevMessages, newUserMessage]);
     setUserInput('');
     setIsLoading(true);
     setError(null);
 
     try {
-      // Prepare messages for the API call - include history
-      let newMessages: ChatMessage[] = [...messages, newUserMessage];
+      let systemMessageContent: string | null = null;
 
       if (currentArticle) {
+        // Context: Specific article
         let articleInfo = `用户当前正在查看以下文章：\n标题：${currentArticle.title}\n`;
         if (currentArticle.content) {
-          articleInfo += `内容：\n${currentArticle.content.substring(0, 3000)}\n`; // Limit content length for context
+          articleInfo += `内容：\n${currentArticle.content.substring(0, 3000)}\n`; // Limit content length
         } else if (currentArticle.summary) {
           articleInfo += `摘要：\n${currentArticle.summary}\n`;
         }
         articleInfo += `\n请优先根据上述文章信息回答用户关于此文章的提问。如果用户的问题与此文章无关，则按常规方式回答。`;
-
-        const articleContextMessage: ChatMessage = {
-          role: 'system',
-          content: articleInfo
-        };
-        // Prepend system message with article context
-        // Ensure not to duplicate system messages if one already exists from previous turns for the same article (more advanced)
-        // For now, we'll prepend it to the current turn's messages being sent.
-        // A more robust approach might involve managing system messages in the chat history.
-        newMessages = [articleContextMessage, ...messages, newUserMessage];
+        systemMessageContent = articleInfo;
+      } else if (articles && articles.length > 0) {
+        // Context: Homepage with list of articles
+        let articlesListInfo = '用户当前在他的文章收藏主页。以下是用户收藏的部分文章列表（标题和摘要）：\n\n';
+        // Limit to first 10 articles and 150 chars for summary to manage context size
+        articles.slice(0, 10).forEach(article => { 
+          articlesListInfo += `标题：${article.title}\n`;
+          if (article.summary) {
+            articlesListInfo += `摘要：${article.summary.substring(0, 150)}...\n`; 
+          }
+          articlesListInfo += '\n';
+        });
+        if (articles.length > 10) {
+          articlesListInfo += `还有 ${articles.length - 10} 篇其他文章未在此列出。\n`;
+        }
+        articlesListInfo += `请根据这个列表回答用户关于他收藏的文章的问题。`;
+        systemMessageContent = articlesListInfo;
       }
-      const messagesToSend = newMessages.slice(-10); // Send last 10 messages including new user message and potential system message
-      const aiResponseContent = await getAzureOpenAIChatCompletion(messagesToSend);
+
+      // Prepare messages for API call
+      // `messages` state still holds the chat history *before* the current `newUserMessage` was added for display.
+      const messagesToSendToAI: ChatMessage[] = [];
+      if (systemMessageContent) {
+        messagesToSendToAI.push({ role: 'system', content: systemMessageContent });
+      }
+      // Add historical messages from state (these do NOT include the latest newUserMessage yet, which is correct for history)
+      messages.forEach(msg => messagesToSendToAI.push(msg)); 
+      // Add the current user message that triggered this call
+      messagesToSendToAI.push(newUserMessage);
+
+      // Send only the last N messages (e.g., 10) to keep the payload reasonable.
+      // This now correctly includes the system message, history, and current user message in the slice.
+      const finalMessagesForApi = messagesToSendToAI.slice(-10);
+
+      const aiResponseContent = await getAzureOpenAIChatCompletion(finalMessagesForApi);
       const aiResponseMessage: ChatMessage = { role: 'assistant', content: aiResponseContent };
       setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
+
     } catch (err) {
       console.error("Error from AI service:", err);
       const errorMessage = err instanceof Error ? err.message : '与AI服务通信时发生未知错误。';
       setError(errorMessage);
-      // Optionally add an error message to the chat
+      // Add an error message to the chat display
       setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: `抱歉，我遇到了一些麻烦: ${errorMessage}` }]);
     } finally {
       setIsLoading(false);
