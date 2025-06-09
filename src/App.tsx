@@ -4,6 +4,7 @@ import ArticleList from './components/articles/ArticleList';
 import ArticleView from './components/articles/ArticleView';
 import AddLinkModal from './components/articles/AddLinkModal';
 import { ArticlesProvider, useArticles } from './context/ArticlesContext';
+import ChatPanel from './components/ChatPanel'; // Added import for ChatPanel
 
 function Main() {
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
@@ -47,11 +48,16 @@ function Main() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    // Changed to flex flex-col and h-screen for full height layout
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <Header onAddLinkClick={() => setIsAddLinkModalOpen(true)} />
       
-      <main className="container mx-auto px-4 pt-24 pb-12">
-        {currentArticle ? (
+      {/* New container for main content and chat panel */}
+      <div className="flex flex-1 overflow-hidden"> {/* Takes remaining space, handles overflow */}
+        
+        {/* Main content area (left side) - adjusted padding and added overflow-y-auto */}
+        <main className="flex-grow container mx-auto px-4 py-6 overflow-y-auto"> 
+          {currentArticle ? (
           <ArticleView 
             article={currentArticle} 
             onBack={handleBackToList} 
@@ -59,7 +65,7 @@ function Main() {
             onDelete={handleDeleteArticle}
           />
         ) : (
-          <div className="py-6">
+          <div> {/* Removed py-6 from here as main now has py-6 */}
             <h2 className="text-2xl font-bold mb-6">My Saved Articles</h2>
             
             <ArticleList 
@@ -69,7 +75,13 @@ function Main() {
             />
           </div>
         )}
-      </main>
+        </main>
+
+        {/* Chat Panel (right side) */}
+        <aside className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
+          <ChatPanel /> {/* ChatPanel has h-full, so it will fill this aside */}
+        </aside>
+      </div>
 
       <AddLinkModal 
         isOpen={isAddLinkModalOpen}
