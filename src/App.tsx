@@ -5,6 +5,8 @@ import ArticleView from './components/articles/ArticleView';
 import AddLinkModal from './components/articles/AddLinkModal';
 import { ArticlesProvider, useArticles } from './context/ArticlesContext';
 import ChatPanel from './components/ChatPanel'; // Added import for ChatPanel
+import Button from './components/ui/Button';
+import { Plus } from 'lucide-react';
 
 function Main() {
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
@@ -50,10 +52,10 @@ function Main() {
   return (
     // Changed to flex flex-col and h-screen for full height layout
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <Header onAddLinkClick={() => setIsAddLinkModalOpen(true)} />
+      <Header />
       
       {/* New container for main content and chat panel */}
-      <div className="flex flex-1 overflow-hidden"> {/* Takes remaining space, handles overflow */}
+      <div className="flex flex-1 overflow-hidden pt-16"> {/* Takes remaining space, handles overflow */}
         
         {/* Main content area (left side) - adjusted padding and added overflow-y-auto */}
         <main className="flex-grow container mx-auto px-4 py-6 overflow-y-auto"> 
@@ -65,15 +67,24 @@ function Main() {
             onDelete={handleDeleteArticle}
           />
         ) : (
-          <div> {/* Removed py-6 from here as main now has py-6 */}
-            <h2 className="text-2xl font-bold mb-6">My Saved Articles</h2>
-            
+          <> {/* Use a fragment to group siblings */}
+            <div className="flex justify-between items-center mb-6"> {/* Title and button container */}
+              <h2 className="text-2xl font-bold">My Saved Articles</h2>
+              <Button 
+                onClick={() => setIsAddLinkModalOpen(true)} 
+                variant="primary"
+                className="transition-transform hover:scale-105"
+              >
+                <Plus size={18} className="mr-2" />
+                Add New
+              </Button>
+            </div>
             <ArticleList 
               articles={articles} 
               onArticleClick={handleArticleClick}
               onDeleteArticle={handleDeleteArticle}
             />
-          </div>
+          </>
         )}
         </main>
 
