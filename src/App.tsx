@@ -79,7 +79,7 @@ function Main() {
 
         {/* Chat Panel (right side) */}
         <aside className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
-          <ChatPanel /> {/* ChatPanel has h-full, so it will fill this aside */}
+          <ChatPanel currentArticle={currentArticle} /> {/* ChatPanel has h-full, so it will fill this aside */}
         </aside>
       </div>
 

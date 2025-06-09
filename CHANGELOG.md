@@ -3,6 +3,11 @@
 ## [未发布版本] - 2025-05-23 (最新)
 
 ### 新增
+- **详情页AI功能：文章上下文感知 (阶段四)**:
+  - 修改 `App.tsx` 以将当前查看的文章 (`currentArticle`) 传递给 `ChatPanel` 组件。
+  - 更新 `ChatPanel.tsx` 以接收 `currentArticle` prop。
+  - 当用户在文章详情页提问时，`ChatPanel` 会将当前文章的标题和内容（或摘要）作为系统消息发送给 Azure OpenAI，为AI提供上下文，使其能够针对特定文章进行回答。
+
 - **AI 服务集成与聊天功能实现 (阶段二和三)**:
   - 创建了 `src/services/aiService.ts` 模块，用于封装与 Azure OpenAI 服务的API交互。
   - 在 `ChatPanel.tsx` 中实现了完整的聊天逻辑：

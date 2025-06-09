@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Article } from '../types'; // Import Article type
 import { getAzureOpenAIChatCompletion, ChatMessage } from '../services/aiService';
 
-const ChatPanel: React.FC = () => {
+interface ChatPanelProps {
+  currentArticle: Article | null;
+}
+
+const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,8 +46,29 @@ const ChatPanel: React.FC = () => {
 
     try {
       // Prepare messages for the API call - include history
-      const messagesForApi = [...messages, newUserMessage];
-      const aiResponseContent = await getAzureOpenAIChatCompletion(messagesForApi);
+      let newMessages: ChatMessage[] = [...messages, newUserMessage];
+
+      if (currentArticle) {
+        let articleInfo = `用户当前正在查看以下文章：\n标题：${currentArticle.title}\n`;
+        if (currentArticle.content) {
+          articleInfo += `内容：\n${currentArticle.content.substring(0, 3000)}\n`; // Limit content length for context
+        } else if (currentArticle.summary) {
+          articleInfo += `摘要：\n${currentArticle.summary}\n`;
+        }
+        articleInfo += `\n请优先根据上述文章信息回答用户关于此文章的提问。如果用户的问题与此文章无关，则按常规方式回答。`;
+
+        const articleContextMessage: ChatMessage = {
+          role: 'system',
+          content: articleInfo
+        };
+        // Prepend system message with article context
+        // Ensure not to duplicate system messages if one already exists from previous turns for the same article (more advanced)
+        // For now, we'll prepend it to the current turn's messages being sent.
+        // A more robust approach might involve managing system messages in the chat history.
+        newMessages = [articleContextMessage, ...messages, newUserMessage];
+      }
+      const messagesToSend = newMessages.slice(-10); // Send last 10 messages including new user message and potential system message
+      const aiResponseContent = await getAzureOpenAIChatCompletion(messagesToSend);
       const aiResponseMessage: ChatMessage = { role: 'assistant', content: aiResponseContent };
       setMessages(prevMessages => [...prevMessages, aiResponseMessage]);
     } catch (err) {
