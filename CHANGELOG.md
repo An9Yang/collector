@@ -22,11 +22,30 @@
   - 添加了后端服务器状态检测和友好提示
   - 改进了日志输出，使用表情符号增强可读性
 
+### 🤖 **重大升级：Puppeteer无头浏览器支持**
+- **智能抓取策略**:
+  - 微信公众号链接自动使用Puppeteer无头浏览器抓取
+  - 普通网站优先使用HTTP方式（更快），失败时自动切换到Puppeteer
+  - 支持JavaScript渲染的现代网站抓取
+- **反爬虫机制应对**:
+  - 隐藏webdriver特征，模拟真实浏览器行为
+  - 设置完整的浏览器环境和请求头
+  - 智能等待页面加载完成和网络空闲
+- **微信特定优化**:
+  - 针对微信公众号内容的专门选择器
+  - 清理分享按钮、二维码等无关元素
+  - 保留文章核心内容和格式
+
 ### 使用说明
-- 现在可以通过以下方式启动抓取功能：
-  - `npm run scraper` - 仅启动后端抓取服务器
-  - `npm run start-all` - 同时启动前端和后端服务
-  - 手动运行 `node scraper-server.cjs` 启动后端服务器
+- **标准抓取模式**：
+  - `npm run scraper` - 仅启动标准后端抓取服务器
+  - `npm run start-all` - 同时启动前端和标准后端服务
+- **高级抓取模式**（推荐）：
+  - `npm run scraper-advanced` - 启动支持Puppeteer的高级抓取服务器
+  - `npm run start-all-advanced` - 同时启动前端和高级后端服务
+- **手动启动**：
+  - `node scraper-server.cjs` - 标准服务器
+  - `node scraper-server-advanced.cjs` - 高级服务器
 
 ## [未发布版本] - 2025-05-23
 
