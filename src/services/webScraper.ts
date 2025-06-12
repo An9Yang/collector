@@ -83,7 +83,7 @@ const detectSourceType = (url: string, title: string): ScrapedContent['sourceTyp
 export const scrapeWebContent = async (url: string): Promise<ScrapedContent> => {
   // 先尝试使用后端API
   try {
-    console.log('尝试使用后端API抓取内容...');
+    console.log('🔄 尝试使用后端API抓取内容...');
     // 使用本地运行的爬虫服务器
     const backendUrl = 'http://localhost:3001/api/scrape';
     
@@ -103,6 +103,7 @@ export const scrapeWebContent = async (url: string): Promise<ScrapedContent> => 
     
     // 检查从后端获取的数据格式是否完整
     if (data.title && (data.htmlContent || data.content)) {
+      console.log('✅ 后端API抓取成功');
       // 识别内容类型
       const sourceType = detectSourceType(url, data.title);
       
@@ -116,7 +117,12 @@ export const scrapeWebContent = async (url: string): Promise<ScrapedContent> => 
     
     return data;
   } catch (backendError) {
-    console.error('后端API抓取失败，尝试使用代理服务器...', backendError);
+    console.error('❌ 后端API抓取失败，尝试使用代理服务器...', backendError);
+    
+    // 检查是否是连接拒绝错误
+    if (backendError instanceof Error && backendError.message.includes('Failed to fetch')) {
+      console.warn('⚠️  后端抓取服务器未运行。请运行: npm run scraper');
+    }
     
     // 后端API失败，尝试使用代理服务器
     let lastError = backendError instanceof Error ? backendError.message : '后端API调用失败';

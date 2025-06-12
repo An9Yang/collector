@@ -75,7 +75,27 @@ const server = http.createServer(async (req, res) => {
 
 // 启动服务器
 server.listen(PORT, () => {
-  console.log(`抓取服务器运行在 http://localhost:${PORT}`);
+  console.log(`🚀 抓取服务器已启动，运行在 http://localhost:${PORT}`);
+  console.log(`📡 API端点: http://localhost:${PORT}/api/scrape`);
+});
+
+// 处理服务器错误
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ 端口 ${PORT} 已被占用，请尝试其他端口或停止占用该端口的进程`);
+    process.exit(1);
+  } else {
+    console.error('❌ 服务器启动失败:', error.message);
+  }
+});
+
+// 优雅关闭
+process.on('SIGINT', () => {
+  console.log('\n📴 正在关闭抓取服务器...');
+  server.close(() => {
+    console.log('✅ 抓取服务器已关闭');
+    process.exit(0);
+  });
 });
 
 // 抓取URL内容的函数
