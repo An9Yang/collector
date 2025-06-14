@@ -8,6 +8,17 @@ import { detectFormatFromText, ContentFormat } from '../../utils/formatDetection
 import { scrapeWebContent } from '../../services/webScraper';
 import DOMPurify from 'dompurify';
 
+interface ImageInfo {
+  originalUrl: string;
+  localUrl?: string;
+  alt: string;
+  title: string;
+  downloaded: boolean;
+  filename?: string;
+  size?: number;
+  contentType?: string;
+}
+
 interface AddLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -35,6 +46,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
   const [isFetchingContent, setIsFetchingContent] = useState(false);
   const [urlFetched, setUrlFetched] = useState(false);
   const [fetchedTitle, setFetchedTitle] = useState('');
+  const [scrapedImages, setScrapedImages] = useState<ImageInfo[]>([]);
+  const [downloadImages, setDownloadImages] = useState(true);
+  const [useAdvanced, setUseAdvanced] = useState<'auto' | 'force' | 'disable'>('auto');
 
   if (!isOpen) return null;
 
@@ -54,8 +68,8 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       // 开始抓取
       setIsFetchingContent(true);
       
-      // 调用抓取服务
-      const scraped = await scrapeWebContent(url);
+      // 调用抓取服务，传递所有选项
+      const scraped = await scrapeWebContent(url, downloadImages, useAdvanced);
       
       if (scraped.error) {
         setError(`抓取失败：${scraped.error}`);
@@ -84,6 +98,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       setFetchedTitle(scraped.title);
       setUrlFetched(true);
       
+      // 设置图片数据
+      setScrapedImages(scraped.images || []);
+      
       // 自动切换到内容模式
       setMode('content');
       
@@ -94,6 +111,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       setDetectedFormat(formatToUse);
       
       console.log(`抓取内容成功: 来源类型=[${scraped.sourceType || '未知'}], 格式=[${formatToUse}]`);
+      if (scraped.images && scraped.images.length > 0) {
+        console.log(`📸 发现 ${scraped.images.length} 张图片，其中 ${scraped.downloadedImageCount || 0} 张已下载`);
+      }
       
     } catch (err) {
       console.error('抓取内容失败:', err);
@@ -302,9 +322,18 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
     }
   };
 
-  // 处理内容变化回调
-  const handleProcessedContentChange = (processed: string) => {
-    setProcessedContent(processed);
+  const resetForm = () => {
+    setUrl('');
+    setContent('');
+    setError('');
+    setUrlFetched(false);
+    setFetchedTitle('');
+    setProcessedContent('');
+    setScrapedImages([]);
+    setDetectedFormat(null);
+    setViewMode('edit');
+    setDownloadImages(true);
+    setUseAdvanced('auto');
   };
 
   return (
@@ -328,8 +357,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                 type="button"
                 onClick={() => {
                   setMode('url');
-                  setUrlFetched(false);
-                  setError('');
+                  resetForm();
                 }}
                 className={`py-2 px-4 ${mode === 'url' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
               >
@@ -340,7 +368,10 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setMode('content')}
+                onClick={() => {
+                  setMode('content');
+                  resetForm();
+                }}
                 className={`py-2 px-4 ${mode === 'content' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
               >
                 <div className="flex items-center">
@@ -371,8 +402,38 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                     </div>
                   </div>
                   
-                  {/* 添加抓取内容按钮 */}
-                  <div className="mt-2">
+                                      {/* 抓取选项 */}
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="downloadImages"
+                          checked={downloadImages}
+                          onChange={(e) => setDownloadImages(e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                        <label htmlFor="downloadImages" className="text-sm text-gray-700 dark:text-gray-300">
+                          下载并保存图片到本地
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <label htmlFor="useAdvanced" className="text-sm text-gray-700 dark:text-gray-300">
+                          抓取模式:
+                        </label>
+                        <select
+                          id="useAdvanced"
+                          value={useAdvanced}
+                          onChange={(e) => setUseAdvanced(e.target.value as 'auto' | 'force' | 'disable')}
+                          className="text-sm rounded border-gray-300 text-gray-700 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        >
+                          <option value="auto">智能选择</option>
+                          <option value="force">强制高级模式</option>
+                          <option value="disable">基础模式</option>
+                        </select>
+                      </div>
+                    </div>
+                    
                     <Button
                       type="button"
                       variant="outline"
@@ -385,7 +446,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                        urlFetched ? '重新抓取内容' : '抓取网页内容'}
                       {!isFetchingContent && <Download size={16} className="ml-2" />}
                     </Button>
-                  </div>
                   
                   {/* 抓取成功信息显示 */}
                   {urlFetched && !isFetchingContent && (
@@ -393,6 +453,14 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                       <p className="text-sm text-green-700 dark:text-green-400">
                         ✓ 已成功抓取: {fetchedTitle || '网页内容'}
                       </p>
+                      {scrapedImages && scrapedImages.length > 0 && (
+                        <p className="text-sm text-green-600 dark:text-green-500 mt-1">
+                          📸 发现 {scrapedImages.length} 张图片
+                          {scrapedImages.filter(img => img.downloaded).length > 0 && 
+                            ` (${scrapedImages.filter(img => img.downloaded).length} 张已下载)`
+                          }
+                        </p>
+                      )}
                     </div>
                   )}
                   
@@ -473,7 +541,8 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                         content={content} 
                         binaryData={binaryData || undefined}
                         format={detectedFormat || undefined}
-                        onChange={handleProcessedContentChange}
+                        images={scrapedImages}
+                        onChange={setProcessedContent}
                       />
                     </div>
                   )}
