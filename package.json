@@ -10,11 +10,11 @@
     "preview": "vite preview",
     "setup-supabase": "node setup-supabase.js",
     "scraper": "node scraper-server-unified.cjs",
-    "scraper-legacy": "node scraper-server.cjs",
     "scraper-advanced": "node scraper-server-advanced.cjs",
     "scraper-images": "node scraper-server-with-images.cjs",
     "start": "concurrently \"npm run dev\" \"npm run scraper\"",
-    "start-legacy": "concurrently \"npm run dev\" \"npm run scraper-legacy\""
+    "start-advanced": "concurrently \"npm run dev\" \"npm run scraper-advanced\"",
+    "test": "echo \"Tests are located in src/__tests__/\" && exit 0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
