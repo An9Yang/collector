@@ -47,8 +47,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
   const [urlFetched, setUrlFetched] = useState(false);
   const [fetchedTitle, setFetchedTitle] = useState('');
   const [scrapedImages, setScrapedImages] = useState<ImageInfo[]>([]);
-  const [downloadImages, setDownloadImages] = useState(true);
-  const [useAdvanced, setUseAdvanced] = useState<'auto' | 'force' | 'disable'>('auto');
 
   if (!isOpen) return null;
 
@@ -68,8 +66,8 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       // 开始抓取
       setIsFetchingContent(true);
       
-      // 调用抓取服务，传递所有选项
-      const scraped = await scrapeWebContent(url, downloadImages, useAdvanced);
+      // 使用智能抓取：自动选择最佳模式，默认下载图片到云存储
+      const scraped = await scrapeWebContent(url, false, 'auto'); // 不下载到本地，使用云存储
       
       if (scraped.error) {
         setError(`抓取失败：${scraped.error}`);
@@ -110,9 +108,9 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       // 设置检测到的格式
       setDetectedFormat(formatToUse);
       
-      console.log(`抓取内容成功: 来源类型=[${scraped.sourceType || '未知'}], 格式=[${formatToUse}]`);
+      console.log(`✅ 智能抓取成功: 来源类型=[${scraped.sourceType || '未知'}], 格式=[${formatToUse}], 方法=[${scraped.method || '智能选择'}]`);
       if (scraped.images && scraped.images.length > 0) {
-        console.log(`📸 发现 ${scraped.images.length} 张图片，其中 ${scraped.downloadedImageCount || 0} 张已下载`);
+        console.log(`📸 发现 ${scraped.images.length} 张图片`);
       }
       
     } catch (err) {
@@ -332,8 +330,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
     setScrapedImages([]);
     setDetectedFormat(null);
     setViewMode('edit');
-    setDownloadImages(true);
-    setUseAdvanced('auto');
   };
 
   return (
@@ -402,65 +398,33 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                     </div>
                   </div>
                   
-                                      {/* 抓取选项 */}
-                    <div className="mt-2 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="downloadImages"
-                          checked={downloadImages}
-                          onChange={(e) => setDownloadImages(e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
-                        />
-                        <label htmlFor="downloadImages" className="text-sm text-gray-700 dark:text-gray-300">
-                          下载并保存图片到本地
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <label htmlFor="useAdvanced" className="text-sm text-gray-700 dark:text-gray-300">
-                          抓取模式:
-                        </label>
-                        <select
-                          id="useAdvanced"
-                          value={useAdvanced}
-                          onChange={(e) => setUseAdvanced(e.target.value as 'auto' | 'force' | 'disable')}
-                          className="text-sm rounded border-gray-300 text-gray-700 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                        >
-                          <option value="auto">智能选择</option>
-                          <option value="force">强制高级模式</option>
-                          <option value="disable">基础模式</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={fetchUrlContent}
-                      className="w-full flex items-center justify-center"
-                      isLoading={isFetchingContent}
-                      disabled={isFetchingContent || !url.trim()}
-                    >
-                      {isFetchingContent ? '抓取中...' : 
-                       urlFetched ? '重新抓取内容' : '抓取网页内容'}
-                      {!isFetchingContent && <Download size={16} className="ml-2" />}
-                    </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={fetchUrlContent}
+                    className="w-full flex items-center justify-center"
+                    isLoading={isFetchingContent}
+                    disabled={isFetchingContent || !url.trim()}
+                  >
+                                         {isFetchingContent ? '🤖 智能抓取中...' : 
+                      urlFetched ? '🔄 重新抓取内容' : '🚀 智能抓取网页内容'}
+                    {!isFetchingContent && <Download size={16} className="ml-2" />}
+                  </Button>
                   
-                  {/* 抓取成功信息显示 */}
+                  {/* 智能抓取成功信息显示 */}
                   {urlFetched && !isFetchingContent && (
                     <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                       <p className="text-sm text-green-700 dark:text-green-400">
-                        ✓ 已成功抓取: {fetchedTitle || '网页内容'}
+                        🎯 智能抓取成功: {fetchedTitle || '网页内容'}
                       </p>
                       {scrapedImages && scrapedImages.length > 0 && (
                         <p className="text-sm text-green-600 dark:text-green-500 mt-1">
-                          📸 发现 {scrapedImages.length} 张图片
-                          {scrapedImages.filter(img => img.downloaded).length > 0 && 
-                            ` (${scrapedImages.filter(img => img.downloaded).length} 张已下载)`
-                          }
+                          📸 发现 {scrapedImages.length} 张图片，已保存到云存储
                         </p>
                       )}
+                      <p className="text-sm text-green-600 dark:text-green-500 mt-1">
+                        🤖 系统已自动选择最佳抓取方式
+                      </p>
                     </div>
                   )}
                   
