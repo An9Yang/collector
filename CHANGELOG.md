@@ -1,3 +1,27 @@
+## [新分支创建] - 2025-06-20
+
+### 🌿 创建 reframe 分支
+- **分支目的**：为即将进行的大规模架构重构创建专用分支
+- **准备工作**：
+  - 提交了当前所有更改，确保代码库状态干净
+  - 删除了多余的 scraper 服务器文件（scraper-server-advanced.cjs, scraper-server-with-images.cjs）
+  - 新增了测试设置文件 src/__tests__/setup.ts
+  - 重构了 Supabase 配置架构
+  - 更新了服务层和测试配置
+- **下一步计划**：在 reframe 分支中实施技术重构方案，包括：
+  - 项目结构重组为 monorepo 架构
+  - 前端状态管理从 Context 迁移到 Zustand
+  - 后端服务模块化重构
+  - 工程化改进和测试完善
+
+### 📋 提交详情
+- 提交哈希：c6b7e9c
+- 文件变更：18个文件修改，831行新增，1048行删除
+- 远程分支：已推送到 GitHub (origin/reframe)
+- Pull Request：可通过 https://github.com/An9Yang/collector/pull/new/reframe 创建
+
+---
+
 ## [Unreleased] - 2025-06-20
 
 ### ✅ 代码库全面优化
