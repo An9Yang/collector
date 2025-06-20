@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [分支同步] - 2025-06-20
+
+### 🔄 `main` 分支与 `test` 分支同步
+- 将 `test` 分支的最新更改合并到 `main` 分支。
+- 手动解决了 `CHANGELOG.md` 文件中的合并冲突，保留了 `test` 分支的更新日志。
+- 将更新后的 `main` 分支推送到 `origin/main`。
+
 ## [Unreleased]
 
 ### 新增功能
