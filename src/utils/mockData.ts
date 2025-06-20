@@ -78,7 +78,7 @@ export const generateMockArticleFromContent = (content: string, index = 0): Arti
     } else {
       const firstParagraph = content.match(/<p[^>]*>(.*?)<\/p>/i);
       if (firstParagraph && firstParagraph[1]) {
-        title = firstParagraph[1].replace(/<[^>]*>/g, '').trim().slice(0, 60);
+        title = firstParagraph[1].replace(/<[^>]*>/g, '').trim().slice(0, 150); // 增加标题限制
       }
     }
   } else if (format === 'markdown') {
@@ -89,10 +89,10 @@ export const generateMockArticleFromContent = (content: string, index = 0): Arti
     if (titleMatch && titleMatch[1]) {
       title = titleMatch[1].trim();
     } else {
-      title = content.split('\n')[0].trim().slice(0, 60);
+      title = content.split('\n')[0].trim().slice(0, 150); // 增加标题限制
     }
   } else {
-    title = content.split('\n')[0].trim().slice(0, 60);
+    title = content.split('\n')[0].trim().slice(0, 150); // 增加标题限制
   }
   
   let summary = '';
@@ -102,12 +102,12 @@ export const generateMockArticleFromContent = (content: string, index = 0): Arti
       .replace(/<[^>]*>/g, '') 
       .replace(/\s+/g, ' ')    
       .trim()
-      .slice(0, 200) + '...';
+      .slice(0, 800) + '...'; // 增加摘要长度限制
   } else {
     summary = content
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 200) + '...';
+      .slice(0, 800) + '...'; // 增加摘要长度限制
   }
   
   return {
