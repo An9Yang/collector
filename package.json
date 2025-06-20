@@ -12,7 +12,7 @@
     "scraper": "node scraper-server-unified.cjs",
     "scraper-advanced": "node scraper-server-advanced.cjs",
     "scraper-images": "node scraper-server-with-images.cjs",
-    "start": "concurrently \"npm run dev\" \"npm run scraper\"",
+    "start": "serve -s dist",
     "start-advanced": "concurrently \"npm run dev\" \"npm run scraper-advanced\"",
     "test": "echo \"Tests are located in src/__tests__/\" && exit 0"
   },
@@ -41,6 +41,7 @@
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
     "postcss": "^8.4.35",
+    "serve": "^14.2.4",
     "supabase": "^2.23.4",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",

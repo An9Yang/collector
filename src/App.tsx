@@ -2,15 +2,49 @@ import { useState, useEffect } from 'react';
 import ArticleList from './components/articles/ArticleList';
 import ArticleView from './components/articles/ArticleView';
 import AddLinkModal from './components/articles/AddLinkModal';
+import CollectionSelector from './components/collections/CollectionSelector';
+import CollectionModal from './components/collections/CollectionModal';
 import { ArticlesProvider, useArticles } from './context/ArticlesContext';
+import { CollectionsProvider, useCollections } from './context/CollectionsContext';
 import ChatPanel from './components/ChatPanel';
 import Button from './components/ui/Button';
-import { Plus, Moon, Sun } from 'lucide-react';
+import { Plus, Moon, Sun, Settings } from 'lucide-react';
+import { Article } from './types';
 
 function Main() {
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [isLoadingCollection, setIsLoadingCollection] = useState(false);
   const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle } = useArticles();
+  const { 
+    currentCollection, 
+    getArticlesByCollection,
+    addArticleToCollection 
+  } = useCollections();
+
+  // 根据当前收藏夹过滤文章
+  useEffect(() => {
+    const loadArticlesForCurrentCollection = async () => {
+      setIsLoadingCollection(true);
+      try {
+        if (currentCollection) {
+          const collectionArticles = await getArticlesByCollection(currentCollection.id);
+          setFilteredArticles(collectionArticles);
+        } else {
+          setFilteredArticles(articles);
+        }
+      } catch (error) {
+        console.error('Error loading articles for collection:', error);
+        setFilteredArticles([]);
+      } finally {
+        setIsLoadingCollection(false);
+      }
+    };
+
+    loadArticlesForCurrentCollection();
+  }, [currentCollection, articles, getArticlesByCollection]);
 
   // 主题切换逻辑
   useEffect(() => {
@@ -44,7 +78,8 @@ function Main() {
   };
 
   const handleArticleClick = (id: string) => {
-    const article = getArticleById(id);
+    // 在过滤后的文章中查找
+    const article = filteredArticles.find(a => a.id === id) || getArticleById(id);
     if (article) {
       setCurrentArticle(article);
     }
@@ -62,6 +97,10 @@ function Main() {
     }
   };
 
+  const handleCreateCollection = () => {
+    setIsCollectionModalOpen(true);
+  };
+
   return (
     <div className="h-screen flex bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       
@@ -75,9 +114,17 @@ function Main() {
               ClipNote
             </h1>
             {!currentArticle && (
-              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                My Saved Articles
-              </h2>
+              <div className="flex items-center space-x-4">
+                {/* 收藏夹选择器 */}
+                <div className="min-w-[200px]">
+                  <CollectionSelector onCreateNew={handleCreateCollection} />
+                </div>
+                {currentCollection && (
+                  <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                    {currentCollection.name}
+                  </h2>
+                )}
+              </div>
             )}
           </div>
           
@@ -113,11 +160,28 @@ function Main() {
             />
           ) : (
             <div className="container mx-auto px-4 py-6">
-              <ArticleList 
-                articles={articles} 
-                onArticleClick={handleArticleClick}
-                onDeleteArticle={handleDeleteArticle}
-              />
+              {isLoadingCollection ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">正在加载收藏夹内容...</p>
+                </div>
+              ) : filteredArticles.length === 0 && currentCollection ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="text-6xl mb-4">{currentCollection.icon}</div>
+                  <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    {currentCollection.name} 收藏夹为空
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                    这个收藏夹还没有文章。点击上方的"Add New"按钮来添加第一篇文章。
+                  </p>
+                </div>
+              ) : (
+                <ArticleList 
+                  articles={filteredArticles} 
+                  onArticleClick={handleArticleClick}
+                  onDeleteArticle={handleDeleteArticle}
+                />
+              )}
             </div>
           )}
         </main>
@@ -125,9 +189,10 @@ function Main() {
 
       {/* Right Content Area - Chat Zone */}
       <div className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
-        <ChatPanel currentArticle={currentArticle} articles={articles} />
+        <ChatPanel currentArticle={currentArticle} articles={filteredArticles} />
       </div>
 
+      {/* Modals */}
       <AddLinkModal 
         isOpen={isAddLinkModalOpen}
         onClose={() => setIsAddLinkModalOpen(false)}
@@ -135,15 +200,23 @@ function Main() {
         onAddContent={handleAddContent}
         isLoading={isLoading}
       />
+
+      <CollectionModal
+        isOpen={isCollectionModalOpen}
+        onClose={() => setIsCollectionModalOpen(false)}
+        mode="create"
+      />
     </div>
   );
 }
 
 function App() {
   return (
-    <ArticlesProvider>
-      <Main />
-    </ArticlesProvider>
+    <CollectionsProvider>
+      <ArticlesProvider>
+        <Main />
+      </ArticlesProvider>
+    </CollectionsProvider>
   );
 }
 

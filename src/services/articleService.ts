@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import type { Article, ArticleInsert, ArticleUpdate } from '../types';
+import { CollectionService } from './collectionService';
 
 export class ArticleService {
   /**
@@ -56,17 +57,28 @@ export class ArticleService {
   /**
    * 创建新文章
    */
-  static async createArticle(article: ArticleInsert): Promise<Article> {
+  static async createArticle(articleData: ArticleInsert): Promise<Article> {
     try {
       const { data, error } = await supabase
         .from('articles')
-        .insert([article])
+        .insert(articleData)
         .select()
         .single();
 
       if (error) {
         console.error('Error creating article:', error);
-        throw new Error(`Supabase error: ${error.message}`);
+        throw new Error('Failed to create article');
+      }
+
+      // 自动添加到默认收藏夹
+      try {
+        const defaultCollection = await CollectionService.getDefaultCollection();
+        if (defaultCollection) {
+          await CollectionService.addArticleToCollection(data.id, defaultCollection.id);
+        }
+      } catch (collectionError) {
+        console.warn('Failed to add article to default collection:', collectionError);
+        // 不阻止文章创建
       }
 
       return data;
@@ -92,7 +104,7 @@ export class ArticleService {
 
       if (error) {
         console.error('Error updating article:', error);
-        throw new Error(`Supabase error: ${error.message}`);
+        throw new Error('Failed to update article');
       }
 
       return data;
@@ -116,7 +128,7 @@ export class ArticleService {
 
       if (error) {
         console.error('Error deleting article:', error);
-        throw new Error(`Supabase error: ${error.message}`);
+        throw new Error('Failed to delete article');
       }
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -178,7 +190,7 @@ export class ArticleService {
 
       if (error) {
         console.error('Error searching articles:', error);
-        throw new Error(`Supabase error: ${error.message}`);
+        throw new Error('Failed to search articles');
       }
 
       return data || [];
@@ -188,5 +200,62 @@ export class ArticleService {
       }
       throw error;
     }
+  }
+
+  /**
+   * 获取文章及其收藏夹信息
+   */
+  static async getArticleWithCollections(id: string) {
+    const article = await this.getArticleById(id);
+    if (!article) return null;
+
+    const collections = await CollectionService.getCollectionsByArticle(id);
+    return {
+      ...article,
+      collections
+    };
+  }
+
+  /**
+   * 按收藏夹获取文章（通过CollectionService代理）
+   */
+  static async getArticlesByCollection(collectionId: string) {
+    return CollectionService.getArticlesByCollection(collectionId);
+  }
+
+  /**
+   * 按来源筛选文章
+   */
+  static async getArticlesBySource(source: 'wechat' | 'linkedin' | 'reddit' | 'other'): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('source', source)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching articles by source:', error);
+      throw new Error('Failed to fetch articles by source');
+    }
+
+    return data;
+  }
+
+  /**
+   * 获取未读文章
+   */
+  static async getUnreadArticles(): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('is_read', false)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching unread articles:', error);
+      throw new Error('Failed to fetch unread articles');
+    }
+
+    return data;
   }
 }
