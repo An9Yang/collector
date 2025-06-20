@@ -8,8 +8,8 @@ interface ArticlesContextType {
   currentArticle: Article | null;
   isLoading: boolean;
   connectionError: string | null;
-  addArticle: (url: string) => Promise<void>;
-  addContent: (content: string) => Promise<void>;
+  addArticle: (url: string, collectionId?: string) => Promise<void>;
+  addContent: (content: string, collectionId?: string) => Promise<void>;
   getArticleById: (id: string) => Article | undefined;
   setCurrentArticle: (article: Article | null) => void;
   markAsRead: (id: string) => Promise<void>;
@@ -71,7 +71,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
     loadArticles();
   }, []); // 只在组件挂载时执行一次
 
-  const addArticle = async (url: string) => {
+  const addArticle = async (url: string, collectionId?: string) => {
     setIsLoading(true);
     setConnectionError(null);
     
@@ -101,7 +101,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         is_read: false,
       };
 
-      await ArticleService.createArticle(articleData);
+      await ArticleService.createArticle(articleData, collectionId);
       // 刷新文章列表以获取最新数据
       await loadArticles();
     } catch (error) {
@@ -114,7 +114,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
     }
   };
 
-  const addContent = async (content: string) => {
+  const addContent = async (content: string, collectionId?: string) => {
     setIsLoading(true);
     setConnectionError(null);
     
@@ -163,7 +163,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         is_read: false,
       };
 
-      await ArticleService.createArticle(articleData);
+      await ArticleService.createArticle(articleData, collectionId);
       // 刷新文章列表以获取最新数据
       await loadArticles();
     } catch (error) {

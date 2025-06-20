@@ -57,7 +57,7 @@ export class ArticleService {
   /**
    * 创建新文章
    */
-  static async createArticle(articleData: ArticleInsert): Promise<Article> {
+  static async createArticle(articleData: ArticleInsert, collectionId?: string): Promise<Article> {
     try {
       const { data, error } = await supabase
         .from('articles')
@@ -70,14 +70,20 @@ export class ArticleService {
         throw new Error('Failed to create article');
       }
 
-      // 自动添加到默认收藏夹
+      // 添加到指定收藏夹或默认收藏夹
       try {
-        const defaultCollection = await CollectionService.getDefaultCollection();
-        if (defaultCollection) {
-          await CollectionService.addArticleToCollection(data.id, defaultCollection.id);
+        if (collectionId) {
+          // 添加到指定的收藏夹
+          await CollectionService.addArticleToCollection(data.id, collectionId);
+        } else {
+          // 添加到默认收藏夹
+          const defaultCollection = await CollectionService.getDefaultCollection();
+          if (defaultCollection) {
+            await CollectionService.addArticleToCollection(data.id, defaultCollection.id);
+          }
         }
       } catch (collectionError) {
-        console.warn('Failed to add article to default collection:', collectionError);
+        console.warn('Failed to add article to collection:', collectionError);
         // 不阻止文章创建
       }
 
