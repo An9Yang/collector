@@ -101,8 +101,9 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         is_read: false,
       };
 
-      const newArticle = await ArticleService.createArticle(articleData);
-      setArticles((prev) => [newArticle, ...prev]);
+      await ArticleService.createArticle(articleData);
+      // 刷新文章列表以获取最新数据
+      await loadArticles();
     } catch (error) {
       console.error('Error adding article to Supabase:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to add article';
@@ -162,8 +163,9 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         is_read: false,
       };
 
-      const newArticle = await ArticleService.createArticle(articleData);
-      setArticles((prev) => [newArticle, ...prev]);
+      await ArticleService.createArticle(articleData);
+      // 刷新文章列表以获取最新数据
+      await loadArticles();
     } catch (error) {
       console.error('Error adding content to Supabase:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to add content';
