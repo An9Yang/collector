@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+import { supabase } from '../lib/supabase';
 import { Collection, CollectionInsert, CollectionUpdate } from '../types';
 
 export class CollectionService {

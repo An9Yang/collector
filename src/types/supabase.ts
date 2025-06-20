@@ -17,7 +17,7 @@ export interface Database {
           url: string
           title: string
           summary: string
-          source: 'wechat' | 'linkedin' | 'reddit' | 'other'
+          source: 'wechat' | 'linkedin' | 'reddit' | 'other' | 'twitter' | 'x' | 'github'
           content: string | null
           cover_image: string | null
           tags: string[] | null
@@ -30,7 +30,7 @@ export interface Database {
           url: string
           title: string
           summary: string
-          source: 'wechat' | 'linkedin' | 'reddit' | 'other'
+          source: 'wechat' | 'linkedin' | 'reddit' | 'other' | 'twitter' | 'x' | 'github'
           content?: string | null
           cover_image?: string | null
           tags?: string[] | null
@@ -43,7 +43,7 @@ export interface Database {
           url?: string
           title?: string
           summary?: string
-          source?: 'wechat' | 'linkedin' | 'reddit' | 'other'
+          source?: 'wechat' | 'linkedin' | 'reddit' | 'other' | 'twitter' | 'x' | 'github'
           content?: string | null
           cover_image?: string | null
           tags?: string[] | null

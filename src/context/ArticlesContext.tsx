@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Article, ArticleInsert } from '../types';
 import { ArticleService } from '../services/articleService';
-import { testSupabaseConnection } from '../config/supabase';
+import { testSupabaseConnection } from '../lib/supabase';
 
 interface ArticlesContextType {
   articles: Article[];

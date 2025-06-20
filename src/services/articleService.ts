@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+import { supabase } from '../lib/supabase';
 import type { Article, ArticleInsert, ArticleUpdate } from '../types';
 import { CollectionService } from './collectionService';
 

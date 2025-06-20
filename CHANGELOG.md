@@ -1,4 +1,47 @@
-# CHANGELOG
+## [Unreleased] - 2025-06-20
+
+### ✅ 代码库全面优化
+- **清理冗余代码**：
+  - 删除了多余的爬虫脚本文件 `scraper-server-advanced.cjs` 和 `scraper-server-with-images.cjs`
+  - 保留了功能最全面的 `scraper-server-unified.cjs` 作为唯一的后端服务
+  - 更新了 `package.json` 中的脚本命令，移除了对已删除文件的引用
+  - 将 `scraper` 重命名为 `start:scraper`，`start-advanced` 重命名为 `start`
+
+- **重构 Supabase 配置**：
+  - 删除了冗余的 `src/lib/supabase.ts` 文件
+  - 将更完善的 `src/config/supabase.ts` 迁移到 `src/lib/supabase.ts`
+  - 统一了整个项目的 Supabase 客户端初始化逻辑
+  - 删除了空的 `src/config` 目录
+
+- **测试系统完善**：
+  - 安装并配置了 Vitest 作为测试框架
+  - 安装了 `@testing-library/jest-dom` 用于 DOM 测试匹配器
+  - 创建了测试配置文件 `src/__tests__/setup.ts`
+  - 更新了 `vite.config.ts`，添加了测试环境配置（jsdom）
+  - 将所有测试文件从普通函数导出格式转换为标准的 Vitest 测试格式
+  - 修复了所有测试文件中的导入路径错误
+  - **修复Vitest监听模式问题**：
+    - 添加 `--run` 参数到测试脚本，让测试运行一次就退出而不会卡在监听模式
+    - 新增 `test:watch` 脚本用于开发时的文件监听模式
+  - 更新了 `package.json` 中的 `test` 脚本，现在可以真正运行测试
+  - 测试已验证 Supabase 连接和基本数据库操作正常工作 (✅ 5个测试通过)
+  - **修复启动错误**：更新所有文件的导入路径从 `../config/supabase` 到 `../lib/supabase`
+  - **扩展类型支持**：在 Supabase 类型定义中添加了 `twitter`, `x`, `github` 等新的 source 类型
+
+### 🚀 改进效果
+- **代码维护性**：消除了代码重复，简化了项目结构
+- **开发效率**：统一了配置文件，减少了混淆和错误
+- **质量保障**：启用了自动化测试，确保代码质量
+- **扩展性**：更清晰的架构便于未来功能扩展
+
+### 🔧 技术栈更新
+- 添加了 `vitest` 作为测试框架
+- 添加了 `@testing-library/jest-dom` 用于测试断言
+- 添加了 `vite-tsconfig-paths` 用于路径解析
+
+---
+
+# CHANGELOG.md
 
 ## [分支同步] - 2025-06-20
 

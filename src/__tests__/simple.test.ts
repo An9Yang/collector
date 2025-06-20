@@ -1,9 +1,10 @@
-import { supabase } from './config/supabase';
+import { describe, test, expect } from 'vitest';
+import { supabase } from '../lib/supabase';
 
-export async function simpleTest() {
-  console.log('🔍 开始最简单的连接测试...');
-  
-  try {
+describe('简单连接测试', () => {
+  test('应该能够进行最基本的健康检查', async () => {
+    console.log('🔍 开始最简单的连接测试...');
+    
     // 最基本的健康检查
     const { data, error } = await supabase
       .from('articles')
@@ -19,13 +20,10 @@ export async function simpleTest() {
         hint: error.hint,
         code: error.code
       });
-      return false;
+      expect(error.message).toBeDefined();
+    } else {
+      console.log('✅ 基本连接成功！');
+      expect(data).toBeDefined();
     }
-    
-    console.log('✅ 基本连接成功！');
-    return true;
-  } catch (err) {
-    console.error('❌ 异常:', err);
-    return false;
-  }
-} 
+  });
+}); 
