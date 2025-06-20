@@ -61,7 +61,7 @@ function Main() {
 
   const handleAddLink = async (url: string) => {
     try {
-      await addArticle(url);
+      await addArticle(url, currentCollection?.id);
       setIsAddLinkModalOpen(false);
     } catch (error) {
       console.error('Failed to add link:', error);
@@ -70,7 +70,7 @@ function Main() {
 
   const handleAddContent = async (content: string) => {
     try {
-      await addContent(content);
+      await addContent(content, currentCollection?.id);
       setIsAddLinkModalOpen(false);
     } catch (error) {
       console.error('Failed to add content:', error);
