@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { X, Link as LinkIcon, FileText, Eye, Edit2, Upload, Download } from 'lucide-react';
+import { X, Link as LinkIcon, FileText, Eye, Edit2, Upload } from 'lucide-react';
 import { getSourceFromUrl } from '../../utils/sourceUtils';
 import ContentPreview from './ContentPreview';
 import { detectFormatFromText, ContentFormat } from '../../utils/formatDetection';
@@ -14,13 +14,6 @@ interface AddLinkModalProps {
   onAddLink: (url: string) => void;
   onAddContent?: (content: string) => void;
   isLoading: boolean;
-}
-
-// 类型定义，用于二进制文件格式结果
-interface BinaryFormatResult {
-  type: 'binary';
-  format: 'docx' | 'xlsx' | 'rtf' | 'unknown';
-  data: ArrayBuffer;
 }
 
 const AddLinkModal: React.FC<AddLinkModalProps> = ({
@@ -41,7 +34,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isFetchingContent, setIsFetchingContent] = useState(false);
   const [urlFetched, setUrlFetched] = useState(false);
-  const [fetchedTitle, setFetchedTitle] = useState('');
 
   if (!isOpen) return null;
 
@@ -88,7 +80,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       
       // 设置抓取的内容
       setContent(contentToUse);
-      setFetchedTitle(scraped.title);
       setUrlFetched(true);
       
       // 自动切换到内容模式

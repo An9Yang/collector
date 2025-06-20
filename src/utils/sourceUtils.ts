@@ -8,6 +8,12 @@ export const getSourceFromUrl = (url: string): Article['source'] => {
     return 'linkedin';
   } else if (url.includes('reddit')) {
     return 'reddit';
+  } else if (url.includes('twitter.com') || url.includes('t.co')) {
+    return 'twitter';
+  } else if (url.includes('x.com')) {
+    return 'x';
+  } else if (url.includes('github.com')) {
+    return 'github';
   }
   return 'other';
 };
@@ -21,6 +27,11 @@ export const getSourceColor = (source: Article['source']): string => {
       return 'bg-blue-500';
     case 'reddit':
       return 'bg-orange-500';
+    case 'twitter':
+    case 'x':
+      return 'bg-blue-500';
+    case 'github':
+      return 'bg-gray-500';
     default:
       return 'bg-gray-500';
   }
@@ -35,6 +46,12 @@ export const getSourceName = (source: Article['source']): string => {
       return 'LinkedIn';
     case 'reddit':
       return 'Reddit';
+    case 'twitter':
+      return 'Twitter';
+    case 'x':
+      return 'X';
+    case 'github':
+      return 'GitHub';
     default:
       return 'Web';
   }

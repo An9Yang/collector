@@ -65,7 +65,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle, articles }) => {
         // Context: Specific article
         let articleInfo = `用户当前正在查看以下文章：\n标题：${currentArticle.title}\n`;
         if (currentArticle.content) {
-          articleInfo += `内容：\n${currentArticle.content.substring(0, 3000)}\n`; // Limit content length
+          articleInfo += `内容：\n${currentArticle.content}\n`; // 解除内容长度限制
         } else if (currentArticle.summary) {
           articleInfo += `摘要：\n${currentArticle.summary}\n`;
         }
@@ -74,17 +74,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle, articles }) => {
       } else if (articles && articles.length > 0) {
         // Context: Homepage with list of articles
         let articlesListInfo = '用户当前在他的文章收藏主页。以下是用户收藏的部分文章列表（标题和摘要）：\n\n';
-        // Limit to first 10 articles and 150 chars for summary to manage context size
-        articles.slice(0, 10).forEach(article => { 
+        // 解除文章数量和摘要长度限制
+        articles.forEach(article => { 
           articlesListInfo += `标题：${article.title}\n`;
           if (article.summary) {
-            articlesListInfo += `摘要：${article.summary.substring(0, 150)}...\n`; 
+            articlesListInfo += `摘要：${article.summary}\n`; // 解除摘要长度限制
           }
           articlesListInfo += '\n';
         });
-        if (articles.length > 10) {
-          articlesListInfo += `还有 ${articles.length - 10} 篇其他文章未在此列出。\n`;
-        }
         articlesListInfo += `请根据这个列表回答用户关于他收藏的文章的问题。`;
         systemMessageContent = articlesListInfo;
       }
@@ -100,9 +97,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle, articles }) => {
       // Add the current user message that triggered this call
       messagesToSendToAI.push(newUserMessage);
 
-      // Send only the last N messages (e.g., 10) to keep the payload reasonable.
-      // This now correctly includes the system message, history, and current user message in the slice.
-      const finalMessagesForApi = messagesToSendToAI.slice(-10);
+      // 解除历史消息数量限制，发送所有消息
+      // 注意：这可能会增加API调用成本，但提供完整的上下文
+      const finalMessagesForApi = messagesToSendToAI;
 
       const aiResponseContent = await getAzureOpenAIChatCompletion(finalMessagesForApi);
       const aiResponseMessage: ChatMessage = { role: 'assistant', content: aiResponseContent };

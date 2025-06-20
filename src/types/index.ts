@@ -3,7 +3,7 @@ export interface Article {
   url: string;
   title: string;
   summary: string;
-  source: 'wechat' | 'linkedin' | 'reddit' | 'other';
+  source: 'wechat' | 'linkedin' | 'reddit' | 'twitter' | 'x' | 'github' | 'other';
   created_at: string;
   updated_at: string;
   is_read: boolean;
@@ -63,7 +63,7 @@ export interface ArticleInsert {
   url: string;
   title: string;
   summary: string;
-  source: 'wechat' | 'linkedin' | 'reddit' | 'other';
+  source: 'wechat' | 'linkedin' | 'reddit' | 'twitter' | 'x' | 'github' | 'other';
   content?: string | null;
   cover_image?: string | null;
   tags?: string[] | null;
@@ -74,7 +74,7 @@ export interface ArticleUpdate {
   url?: string;
   title?: string;
   summary?: string;
-  source?: 'wechat' | 'linkedin' | 'reddit' | 'other';
+  source?: 'wechat' | 'linkedin' | 'reddit' | 'twitter' | 'x' | 'github' | 'other';
   content?: string | null;
   cover_image?: string | null;
   tags?: string[] | null;

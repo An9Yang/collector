@@ -138,7 +138,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
             .replace(/<[^>]*>/g, '')
             .replace(/&[a-z]+;/gi, '')
             .trim()
-            .slice(0, 100);
+            .slice(0, 200); // 增加标题长度限制到200字符
           if (!title) title = 'Untitled Content';
         }
       }
@@ -150,8 +150,8 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
         .trim();
       if (textContent.length > title.length + 10) {
         const summaryContent = textContent.substring(title.length).trim();
-        summary = summaryContent.slice(0, 200);
-        if (summaryContent.length > 200) summary += '...';
+        summary = summaryContent.slice(0, 500); // 增加摘要长度限制到500字符
+        if (summaryContent.length > 500) summary += '...';
       }
 
       const articleData: ArticleInsert = {
