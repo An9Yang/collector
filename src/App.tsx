@@ -17,7 +17,7 @@ function Main() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [isLoadingCollection, setIsLoadingCollection] = useState(false);
-  const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle } = useArticles();
+  const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle, pagination, loadArticles, connectionError, retryConnection } = useArticles();
   const { 
     currentCollection, 
     getArticlesByCollection,
@@ -165,6 +165,23 @@ function Main() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
                   <p className="text-gray-600 dark:text-gray-400">正在加载收藏夹内容...</p>
                 </div>
+              ) : connectionError ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="text-6xl mb-4">⚠️</div>
+                  <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    连接服务器失败
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                    {connectionError}
+                  </p>
+                  <Button 
+                    onClick={retryConnection} 
+                    variant="primary"
+                    className="transition-transform hover:scale-105"
+                  >
+                    重试连接
+                  </Button>
+                </div>
               ) : filteredArticles.length === 0 && currentCollection ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <div className="text-6xl mb-4">{currentCollection.icon}</div>
@@ -180,6 +197,9 @@ function Main() {
                   articles={filteredArticles} 
                   onArticleClick={handleArticleClick}
                   onDeleteArticle={handleDeleteArticle}
+                  pagination={currentCollection ? undefined : pagination}
+                  onPageChange={currentCollection ? undefined : loadArticles}
+                  isLoading={isLoading}
                 />
               )}
             </div>

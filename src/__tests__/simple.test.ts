@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../utils/supabase';
 
 describe('简单连接测试', () => {
   test('应该能够进行最基本的健康检查', async () => {

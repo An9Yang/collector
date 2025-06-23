@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+</head>
+<body>
+    <h1>Testing API Connection</h1>
+    <div id="result"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        const resultDiv = document.getElementById('result');
+        
+        async function testConnection() {
+            resultDiv.innerHTML = '<p>Testing connection to backend API...</p>';
+            
+            try {
+                const response = await fetch(`${API_URL}/articles`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ Connection successful!</p>
+                    <p>Found ${data.data.length} articles</p>
+                    <p>Pagination: Page ${data.pagination.page} of ${data.pagination.totalPages}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p style="color: red;">❌ Connection failed!</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Make sure the backend is running on port 3001</p>
+                `;
+                console.error('Error:', error);
+            }
+        }
+        
+        // Test connection immediately
+        testConnection();
+    </script>
+</body>
+</html>

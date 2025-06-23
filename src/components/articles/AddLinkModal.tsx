@@ -5,7 +5,7 @@ import { X, Link as LinkIcon, FileText, Eye, Edit2, Upload, Download } from 'luc
 import { getSourceFromUrl } from '../../utils/sourceUtils';
 import ContentPreview from './ContentPreview';
 import { detectFormatFromText, ContentFormat } from '../../utils/formatDetection';
-import { scrapeWebContent } from '../../services/webScraper';
+import { WebScraper } from '../../services/webScraper';
 import DOMPurify from 'dompurify';
 
 interface ImageInfo {
@@ -67,7 +67,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
       setIsFetchingContent(true);
       
       // 使用智能抓取：自动选择最佳模式，默认下载图片到云存储
-      const scraped = await scrapeWebContent(url, false, 'auto'); // 不下载到本地，使用云存储
+      const scraped = await WebScraper.scrapeUrl(url); // 使用新的API
       
       if (scraped.error) {
         setError(`抓取失败：${scraped.error}`);
