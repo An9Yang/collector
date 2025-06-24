@@ -2,6 +2,8 @@ import React from 'react';
 import { Article } from '../../types';
 import ArticleCard from './ArticleCard';
 import { Pagination } from '../common/Pagination';
+import SkeletonLoader from '../common/SkeletonLoader';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface ArticleListProps {
   articles: Article[];
@@ -24,6 +26,15 @@ const ArticleList: React.FC<ArticleListProps> = ({
   onPageChange,
   isLoading = false
 }) => {
+  // Show skeleton loader when loading
+  if (isLoading && articles.length === 0) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2 sm:pt-4">
+        <SkeletonLoader type="card" count={6} />
+      </div>
+    );
+  }
+  
   if (articles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -38,17 +49,29 @@ const ArticleList: React.FC<ArticleListProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-        {articles.map((article, index) => (
-          <ArticleCard 
-            key={article.id} 
-            article={article} 
-            onClick={onArticleClick}
-            onDelete={onDeleteArticle}
-            index={index}
-          />
-        ))}
-      </div>
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-2 sm:pt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <AnimatePresence mode="popLayout">
+          {isLoading ? (
+            // Show skeleton while loading new page
+            <SkeletonLoader type="card" count={6} />
+          ) : (
+            articles.map((article, index) => (
+              <ArticleCard 
+                key={article.id} 
+                article={article} 
+                onClick={onArticleClick}
+                onDelete={onDeleteArticle}
+                index={index}
+              />
+            ))
+          )}
+        </AnimatePresence>
+      </motion.div>
       {pagination && onPageChange && (
         <Pagination
           currentPage={pagination.page}

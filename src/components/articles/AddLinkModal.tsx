@@ -7,6 +7,7 @@ import ContentPreview from './ContentPreview';
 import { detectFormatFromText, ContentFormat } from '../../utils/formatDetection';
 import { WebScraper } from '../../services/webScraper';
 import DOMPurify from 'dompurify';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ImageInfo {
   originalUrl: string;
@@ -48,7 +49,6 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
   const [fetchedTitle, setFetchedTitle] = useState('');
   const [scrapedImages, setScrapedImages] = useState<ImageInfo[]>([]);
 
-  if (!isOpen) return null;
 
   // 从URL获取网页内容
   const fetchUrlContent = async () => {
@@ -333,48 +333,73 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="w-full max-w-3xl">
-        <div className="flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg max-h-[90vh] overflow-hidden">
-          <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">添加内容</h2>
-            <button
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+        >
+          <motion.div 
+            className="w-full max-w-3xl"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, type: "spring", damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl max-h-[90vh] overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+          <div className="relative flex justify-between items-center p-4 border-b border-gray-200/50 dark:border-gray-700/50">
+            {/* Gradient accent line */}
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-80"></div>
+            
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">添加内容</h2>
+            <motion.button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <X size={20} />
-            </button>
+            </motion.button>
           </div>
           
           <div className="p-4 overflow-y-auto">
             {/* 选项卡切换 */}
-            <div className="flex mb-4 border-b dark:border-gray-700">
-              <button
+            <div className="flex mb-4 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg p-1">
+              <motion.button
                 type="button"
                 onClick={() => {
                   setMode('url');
                   resetForm();
                 }}
-                className={`py-2 px-4 ${mode === 'url' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                className={`flex-1 py-2 px-4 rounded-md transition-all duration-200 ${mode === 'url' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <div className="flex items-center">
+                <div className="flex items-center justify-center">
                   <LinkIcon size={16} className="mr-2" />
                   链接
                 </div>
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 onClick={() => {
                   setMode('content');
                   resetForm();
                 }}
-                className={`py-2 px-4 ${mode === 'content' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                className={`flex-1 py-2 px-4 rounded-md transition-all duration-200 ${mode === 'content' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <div className="flex items-center">
+                <div className="flex items-center justify-center">
                   <FileText size={16} className="mr-2" />
                   粘贴内容
                 </div>
-              </button>
+              </motion.button>
             </div>
             
             <form onSubmit={handleSubmit}>
@@ -392,8 +417,10 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                       onChange={(e) => setUrl(e.target.value)}
                       className="pr-10"
                       required
+                      aria-label="文章URL"
+                      aria-describedby={error ? "url-error" : undefined}
                     />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center" aria-hidden="true">
                       <LinkIcon className="h-5 w-5 text-gray-400" />
                     </div>
                   </div>
@@ -413,8 +440,13 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                   
                   {/* 智能抓取成功信息显示 */}
                   {urlFetched && !isFetchingContent && (
-                    <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                      <p className="text-sm text-green-700 dark:text-green-400">
+                    <motion.div 
+                      className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200/50 dark:border-green-800/50 backdrop-blur-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <p className="text-sm font-medium text-green-700 dark:text-green-400">
                         🎯 智能抓取成功: {fetchedTitle || '网页内容'}
                       </p>
                       {scrapedImages && scrapedImages.length > 0 && (
@@ -425,10 +457,10 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                       <p className="text-sm text-green-600 dark:text-green-500 mt-1">
                         🤖 系统已自动选择最佳抓取方式
                       </p>
-                    </div>
+                    </motion.div>
                   )}
                   
-                  {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+                  {error && <p id="url-error" className="mt-1 text-sm text-red-500" role="alert">{error}</p>}
                 </div>
               ) : (
                 <div className="mb-4">
@@ -443,7 +475,8 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+                        className="flex items-center px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        aria-label="上传文件"
                       >
                         <Upload size={12} className="mr-1" />
                         上传文件
@@ -496,8 +529,10 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                       value={content}
                       onChange={handleContentChange}
                       onPaste={handlePaste}
-                      className="w-full h-64 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 dark:border-gray-700"
+                      className="w-full h-64 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 transition-all duration-200 resize-none"
                       required={!binaryData}
+                      aria-label="文章内容"
+                      aria-describedby={error ? "content-error" : undefined}
                     />
                   ) : (
                     <div className="h-64 border rounded-md overflow-y-auto">
@@ -523,7 +558,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                     </div>
                   )}
                   
-                  {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+                  {error && <p id="url-error" className="mt-1 text-sm text-red-500" role="alert">{error}</p>}
                 </div>
               )}
               
@@ -534,27 +569,35 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
                 </div>
               )}
               
-              <div className="flex justify-end space-x-3 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isLoading}
-                >
-                  取消
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={isLoading}
-                  disabled={isLoading}
-                >
-                  {isLoading ? '保存中...' : '保存内容'}
-                </Button>
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="min-w-[100px]"
+                  >
+                    取消
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    type="submit"
+                    isLoading={isLoading}
+                    disabled={isLoading}
+                    className="min-w-[120px] bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg"
+                  >
+                    {isLoading ? '保存中...' : '保存内容'}
+                  </Button>
+                </motion.div>
               </div>
             </form>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

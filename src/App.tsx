@@ -8,7 +8,7 @@ import { ArticlesProvider, useArticles } from './context/ArticlesContext';
 import { CollectionsProvider, useCollections } from './context/CollectionsContext';
 import ChatPanel from './components/ChatPanel';
 import Button from './components/ui/Button';
-import { Plus, Moon, Sun, Settings } from 'lucide-react';
+import { Plus, Moon, Sun, MessageCircle, X, Menu } from 'lucide-react';
 import { Article } from './types';
 
 function Main() {
@@ -17,6 +17,8 @@ function Main() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [isLoadingCollection, setIsLoadingCollection] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false); // 默认关闭，尤其在移动端
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle, pagination, loadArticles, connectionError, retryConnection } = useArticles();
   const { 
     currentCollection, 
@@ -102,55 +104,98 @@ function Main() {
   };
 
   return (
-    <div className="h-screen flex bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="h-screen flex bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300" role="application" aria-label="ClipNote 文章收藏应用">
       
       {/* Left Content Area - Reading Zone */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Left Header */}
-        <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400 flex items-center">
-              <span className="mr-2">📋</span>
-              ClipNote
-            </h1>
+        {/* Left Header - Responsive */}
+        <header className="h-[73px] flex items-center justify-between px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors mr-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label={isMobileMenuOpen ? "关闭菜单" : "打开菜单"}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+            >
+              <Menu size={20} />
+            </button>
+            
+            {/* Logo and Collection Info */}
+            <div className="flex items-center space-x-4">
+              <h1 className="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center">
+                <span className="mr-2">📋</span>
+                <span className="hidden sm:inline">ClipNote</span>
+                <span className="sm:hidden">CN</span>
+              </h1>
+              {currentCollection && !currentArticle && (
+                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-gray-400">/</span>
+                  <span className="font-medium">{currentCollection.name}</span>
+                  <span className="text-xs text-gray-500">({currentCollection.article_count || 0} 篇)</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Desktop navigation */}
             {!currentArticle && (
-              <div className="flex items-center space-x-4">
+              <div className="hidden lg:flex items-center ml-6">
                 {/* 收藏夹选择器 */}
-                <div className="min-w-[200px]">
+                <div className="min-w-[180px]">
                   <CollectionSelector onCreateNew={handleCreateCollection} />
                 </div>
-                {currentCollection && (
-                  <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                    {currentCollection.name}
-                  </h2>
-                )}
               </div>
             )}
           </div>
           
-          <div className="flex items-center space-x-3">
+          {/* Right side buttons */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {!currentArticle && (
               <Button 
                 onClick={() => setIsAddLinkModalOpen(true)} 
                 variant="primary"
-                className="transition-transform hover:scale-105"
+                className="transition-transform hover:scale-105 text-sm sm:text-base"
               >
-                <Plus size={18} className="mr-2" />
-                Add New
+                <Plus size={16} className="sm:mr-2" />
+                <span className="hidden sm:inline">Add New</span>
               </Button>
             )}
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              aria-label="Toggle dark mode"
+              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label={isDarkMode ? "切换到浅色模式" : "切换到深色模式"}
+              aria-pressed={isDarkMode}
             >
-              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isDarkMode ? <Sun size={18} className="sm:w-5 sm:h-5" /> : <Moon size={18} className="sm:w-5 sm:h-5" />}
             </button>
           </div>
         </header>
+        
+        {/* Mobile menu dropdown */}
+        {isMobileMenuOpen && !currentArticle && (
+          <div 
+            id="mobile-menu"
+            className="lg:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4"
+            role="navigation"
+            aria-label="移动端导航菜单"
+          >
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">选择收藏夹</label>
+                <CollectionSelector onCreateNew={handleCreateCollection} />
+              </div>
+              {currentCollection && (
+                <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                  当前：{currentCollection.name}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Left Main Content */}
-        <main className="flex-1 overflow-y-auto"> 
+        <main className="flex-1 overflow-y-auto" role="main" aria-label="文章列表"> 
           {currentArticle ? (
             <ArticleView 
               article={currentArticle} 
@@ -208,9 +253,69 @@ function Main() {
       </div>
 
       {/* Right Content Area - Chat Zone */}
-      <div className="w-96 flex-shrink-0 border-l border-gray-200 dark:border-gray-700">
-        <ChatPanel currentArticle={currentArticle} articles={filteredArticles} />
-      </div>
+      <aside 
+        className={`
+          fixed lg:relative right-0 top-0 h-full z-40
+          ${isChatOpen ? 'w-full sm:w-96' : 'w-0'} 
+          lg:w-96 flex-shrink-0 
+          transition-all duration-300 ease-in-out
+          ${isChatOpen ? 'shadow-xl lg:shadow-none' : ''}
+        `}
+        role="complementary"
+        aria-label="AI 聊天助手"
+        aria-hidden={!isChatOpen && typeof window !== 'undefined' && window.innerWidth < 1024}
+      >
+        <div className={`
+          h-full bg-white dark:bg-gray-800 
+          border-l border-gray-200 dark:border-gray-700
+          ${isChatOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}
+          transition-opacity duration-300
+        `}>
+          {/* 移动端关闭按钮 */}
+          <button
+            onClick={() => setIsChatOpen(false)}
+            className="lg:hidden absolute top-4 right-4 z-50 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="关闭聊天面板"
+          >
+            <X size={20} />
+          </button>
+          <ChatPanel currentArticle={currentArticle} articles={filteredArticles} />
+        </div>
+      </aside>
+
+      {/* 移动端浮动聊天按钮 */}
+      <button
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className={`
+          lg:hidden fixed bottom-6 right-6 z-50
+          w-14 h-14 rounded-full shadow-lg
+          bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600
+          text-white flex items-center justify-center
+          transition-all duration-300 transform hover:scale-110
+          ${isChatOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}
+          focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2
+        `}
+        aria-label="打开AI聊天助手"
+        aria-expanded={isChatOpen}
+      >
+        <MessageCircle size={24} />
+      </button>
+
+      {/* 移动端遮罩层 */}
+      {isChatOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setIsChatOpen(false)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+              setIsChatOpen(false);
+            }
+          }}
+          aria-label="点击关闭聊天面板"
+        />
+      )}
 
       {/* Modals */}
       <AddLinkModal 

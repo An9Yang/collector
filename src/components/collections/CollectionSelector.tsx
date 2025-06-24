@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Collection } from '../../types';
 import { useCollections } from '../../context/CollectionsContext';
-import { ChevronDown, Plus, Folder, Edit, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import Button from '../ui/Button';
 
 interface CollectionSelectorProps {
@@ -62,19 +62,14 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
       {/* 当前选中的收藏夹 */}
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center justify-between w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center justify-between w-full bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 text-sm"
       >
-        <div className="flex items-center space-x-3">
-          <span className="text-lg">{currentCollection?.icon || '📁'}</span>
+        <div className="flex items-center space-x-2">
+          <span className="text-base">{currentCollection?.icon || '📁'}</span>
           <div className="text-left">
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="font-medium text-gray-900 dark:text-white text-sm">
               {currentCollection?.name || '选择收藏夹'}
             </p>
-            {currentCollection?.article_count !== undefined && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {currentCollection.article_count} 篇文章
-              </p>
-            )}
           </div>
         </div>
         <ChevronDown 
@@ -86,8 +81,8 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
 
       {/* 下拉菜单 */}
       {isDropdownOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
-          <div className="py-1 max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl">
+          <div className="py-1 max-h-[400px] overflow-y-auto">
             {collections.map((collection) => (
               <div key={collection.id} className="relative group">
                 <div
@@ -101,9 +96,9 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
                     className="flex items-center space-x-3 flex-1"
                     onClick={() => handleCollectionSelect(collection)}
                   >
-                    <span className="text-lg">{collection.icon}</span>
+                    <span className="text-base">{collection.icon}</span>
                     <div>
-                      <p className="font-medium">{collection.name}</p>
+                      <p className="font-medium text-sm">{collection.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {collection.article_count || 0} 篇文章
                       </p>
@@ -132,6 +127,13 @@ const CollectionSelector: React.FC<CollectionSelectorProps> = ({
                 </div>
               </div>
             ))}
+            
+            {/* 空收藏夹提示 */}
+            {collections.length === 0 && (
+              <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <p className="text-sm">还没有收藏夹</p>
+              </div>
+            )}
             
             {/* 创建新收藏夹按钮 */}
             {showCreateButton && onCreateNew && (

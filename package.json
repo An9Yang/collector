@@ -15,15 +15,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
+    "@tanstack/react-query": "^5.0.0",
     "date-fns": "^3.3.1",
     "dompurify": "^3.0.9",
-    "fs-extra": "^11.3.0",
-    "jsdom": "^26.1.0",
+    "framer-motion": "^12.19.1",
     "lucide-react": "^0.344.0",
-    "puppeteer": "^24.10.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@tanstack/react-query": "^5.0.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

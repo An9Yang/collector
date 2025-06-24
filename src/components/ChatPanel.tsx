@@ -126,7 +126,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ currentArticle, articles }) => {
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800">
       {/* Chat Panel Header */}
-      <header className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <header className="h-[73px] flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-green-100 dark:bg-green-900 rounded-full">
             <MessageCircle size={20} className="text-green-600 dark:text-green-400" />
