@@ -84,7 +84,7 @@ router.get('/:id', async (req, res, next) => {
 // Create article
 router.post('/', async (req, res, next) => {
   try {
-    const { title, content, url, preview, tags, collection_ids } = req.body;
+    const { title, content, url, tags, collection_ids, summary } = req.body;
     
     // Validate required fields
     if (!title || !url) {
@@ -94,7 +94,14 @@ router.post('/', async (req, res, next) => {
     // Insert article
     const { data: article, error: articleError } = await supabase
       .from('articles')
-      .insert([{ title, content, url, preview, tags }])
+      .insert([{ 
+        title, 
+        content, 
+        url, 
+        tags,
+        summary: summary || title.substring(0, 200),
+        source: 'other'
+      }])
       .select()
       .single();
     

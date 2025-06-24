@@ -107,7 +107,13 @@ export class CollectionService {
    */
   static async getArticlesByCollection(collectionId: string, params = {}): Promise<Article[]> {
     try {
-      const result = await api.getCollection(collectionId, params);
+      // 添加默认排序参数
+      const defaultParams = {
+        sortBy: 'created_at',
+        order: 'desc',
+        ...params
+      };
+      const result = await api.getCollection(collectionId, defaultParams);
       return result.articles || [];
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {

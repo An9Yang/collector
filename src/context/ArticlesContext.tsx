@@ -169,7 +169,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       }
 
       const articleData: ArticleInsert = {
-        url: '',
+        url: `local://content/${Date.now()}`,
         title,
         summary,
         source: 'other',

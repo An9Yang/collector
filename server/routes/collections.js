@@ -39,7 +39,12 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { 
+      page = 1, 
+      limit = 20,
+      sortBy = 'created_at',
+      order = 'desc'
+    } = req.query;
     const offset = (page - 1) * limit;
     
     // Get collection details
@@ -68,7 +73,8 @@ router.get('/:id', async (req, res, next) => {
       const { data: articleData, error: articlesError } = await supabase
         .from('articles')
         .select('*')
-        .in('id', articleIds);
+        .in('id', articleIds)
+        .order(sortBy, { ascending: order === 'asc' });
       
       if (articlesError) throw articlesError;
       articles = articleData || [];
