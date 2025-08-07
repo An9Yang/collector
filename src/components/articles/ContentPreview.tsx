@@ -74,9 +74,10 @@ const ContentPreview: React.FC<ContentPreviewProps> = ({
         if (onChange) {
           onChange(processed);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('内容处理错误:', error);
-        setProcessedContent(`<div class="article-content"><p>内容处理失败: ${error?.message || '未知错误'}</p></div>`);
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
+        setProcessedContent(`<div class="article-content"><p>内容处理失败: ${errorMessage}</p></div>`);
       } finally {
         setIsProcessing(false);
       }

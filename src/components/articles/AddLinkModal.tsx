@@ -143,7 +143,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
           // 否则提交URL
           onAddLink(url);
         }
-      } catch (err) {
+      } catch {
         setError('请输入有效的URL');
       }
     } else {
@@ -256,7 +256,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
         setMode('url');
         e.preventDefault(); // 阻止默认粘贴行为
         return;
-      } catch (err) {
+      } catch {
         // 不是有效的URL，继续作为普通文本处理
       }
     }
@@ -306,7 +306,7 @@ const AddLinkModal: React.FC<AddLinkModalProps> = ({
           {sourceName}
         </span>
       );
-    } catch (e) {
+    } catch {
       return null;
     }
   };

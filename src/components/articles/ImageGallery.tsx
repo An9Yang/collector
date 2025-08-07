@@ -17,7 +17,7 @@ interface ImageGalleryProps {
   title?: string;
 }
 
-const ImageGallery: React.FC<ImageGalleryProps> = ({ images, title }) => {
+const ImageGallery: React.FC<ImageGalleryProps> = ({ images }) => {
   const [showGallery, setShowGallery] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageInfo | null>(null);
 

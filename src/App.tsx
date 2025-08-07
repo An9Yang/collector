@@ -22,8 +22,7 @@ function Main() {
   const { articles, isLoading, addArticle, addContent, getArticleById, currentArticle, setCurrentArticle, markAsRead, deleteArticle, pagination, loadArticles, connectionError, retryConnection } = useArticles();
   const { 
     currentCollection, 
-    getArticlesByCollection,
-    addArticleToCollection 
+    getArticlesByCollection
   } = useCollections();
 
   // 根据当前收藏夹过滤文章
