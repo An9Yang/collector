@@ -9,6 +9,20 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+  },
+  server: {
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      overlay: true,  // 启用错误覆盖层以查看具体错误
+      port: 5173,
+      protocol: 'ws',
+      host: 'localhost',
+      timeout: 120000,  // 增加超时时间
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

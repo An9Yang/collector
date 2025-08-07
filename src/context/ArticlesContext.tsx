@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Article, ArticleInsert } from '../types';
 import { ArticleService } from '../services/articleService';
 
@@ -43,6 +43,7 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
   const [articles, setArticles] = useState<Article[]>([]);
   const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -51,14 +52,14 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
     totalPages: 0
   });
 
-  const loadArticles = async (page = 1) => {
+  const loadArticles = useCallback(async (page = 1) => {
     setIsLoading(true);
     setConnectionError(null);
     
     try {
       const result = await ArticleService.getArticles({
         page,
-        limit: pagination.limit,
+        limit: 20,  // 使用固定值避免依赖问题
         sortBy: 'created_at',
         order: 'desc'
       });
@@ -66,24 +67,29 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
       console.log(`📚 从服务器加载了 ${result.data.length} 篇文章（第 ${page} 页）`);
       setArticles(result.data);
       setPagination(result.pagination);
+      setHasInitialized(true);
     } catch (error) {
       console.error('Error loading articles from server:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setConnectionError(errorMessage);
       setArticles([]);
+      // 不自动重试，避免429错误
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // 移除所有依赖，避免循环
 
-  const retryConnection = async () => {
-    await loadArticles(pagination.page);
-  };
+  const retryConnection = useCallback(async () => {
+    await loadArticles(1); // 重试时总是从第一页开始
+  }, [loadArticles]);
 
   // 初始化：加载第一页数据
   useEffect(() => {
-    loadArticles();
-  }, []); // 只在组件挂载时执行一次
+    if (!hasInitialized) {
+      console.log('Initializing articles...');
+      loadArticles();
+    }
+  }, []); // 只在组件挂载时执行
 
   const addArticle = async (url: string, collectionId?: string) => {
     setIsLoading(true);
@@ -224,13 +230,24 @@ export const ArticlesProvider: React.FC<ArticlesProviderProps> = ({ children }) 
     
     try {
       await ArticleService.deleteArticle(id);
-      setArticles((prev) => prev.filter((article) => article.id !== id));
+      
+      // 使用函数式更新来检查删除后的状态
+      setArticles((prev) => {
+        const newArticles = prev.filter((article) => article.id !== id);
+        
+        // 如果删除后当前页没有数据了，且不是第一页，则加载上一页
+        if (newArticles.length === 0 && pagination.page > 1) {
+          // 异步加载上一页
+          setTimeout(() => {
+            loadArticles(pagination.page - 1);
+          }, 0);
+        }
+        
+        return newArticles;
+      });
+      
       if (currentArticle && currentArticle.id === id) {
         setCurrentArticle(null);
-      }
-      // 如果当前页没有数据了，加载上一页
-      if (articles.length === 1 && pagination.page > 1) {
-        await loadArticles(pagination.page - 1);
       }
     } catch (error) {
       console.error('Error deleting article:', error);

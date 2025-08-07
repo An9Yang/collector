@@ -24,12 +24,9 @@ export async function getAzureOpenAIChatCompletion(
       },
       body: JSON.stringify({
         messages: messages,
-        // GPT-5-mini 配置 (Azure OpenAI官方限制)
-        max_tokens: 131072,  // Azure OpenAI GPT-5-mini 最大输出
-        temperature: 0.7,
-        top_p: 0.95,
-        frequency_penalty: 0,
-        presence_penalty: 0,
+        // GPT-5-mini 配置 
+        max_completion_tokens: 100000,  // 模型最大支持 100000 tokens
+        // 不设置其他参数，让模型使用默认值
       }),
     });
 

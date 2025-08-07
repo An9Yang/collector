@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../types/supabase'
 
-// Get environment variables with fallbacks
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xhetlcctjefqpjwkjdwc.supabase.co'
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoZXRsY2N0amVmcXBqd2tqZHdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NTc3ODAsImV4cCI6MjA2MzUzMzc4MH0.21VBG2WbU6piVcHPAuzOoEmyDTS54dKw5fY3tM08b88'
+// Get environment variables - no fallbacks for security
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Debug logging for development
+// Debug logging for development (without exposing sensitive data)
 if (import.meta.env.DEV) {
   console.log('🔧 Supabase Configuration:')
-  console.log('URL:', supabaseUrl)
-  console.log('Key:', supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'Not found')
+  console.log('URL configured:', !!supabaseUrl)
+  console.log('Key configured:', !!supabaseKey)
 }
 
 // Validate required configuration

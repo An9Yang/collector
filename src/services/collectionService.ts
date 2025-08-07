@@ -1,20 +1,23 @@
 import { api } from './api';
 import type { Collection, CollectionInsert, CollectionUpdate, Article } from '../types';
+import { requestManager } from '../utils/requestManager';
 
 export class CollectionService {
   /**
    * 获取所有收藏夹
    */
   static async getCollections(): Promise<Collection[]> {
-    try {
-      return await api.getCollections();
-    } catch (error) {
-      console.error('Network error fetching collections:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+    return requestManager.execute('getCollections', async () => {
+      try {
+        return await api.getCollections();
+      } catch (error) {
+        console.error('Network error fetching collections:', error);
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   /**

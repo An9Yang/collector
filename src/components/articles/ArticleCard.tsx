@@ -12,7 +12,8 @@ interface ArticleCardProps {
   index: number;
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, onDelete, index }) => {
+const ArticleCard = React.forwardRef<HTMLDivElement, ArticleCardProps>(
+  ({ article, onClick, onDelete, index }, ref) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const sourceColor = getSourceColor(article.source);
   const sourceName = getSourceName(article.source);
@@ -53,6 +54,7 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, onDelete, i
   
   return (
     <motion.div 
+      ref={ref}
       className="mb-4 lg:mb-8 cursor-pointer relative group"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -200,6 +202,8 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick, onDelete, i
       )}
     </motion.div>
   );
-};
+});
+
+ArticleCard.displayName = 'ArticleCard';
 
 export default ArticleCard;

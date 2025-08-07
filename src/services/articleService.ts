@@ -1,21 +1,25 @@
 import { api } from './api';
 import type { Article, ArticleInsert, ArticleUpdate } from '../types';
 import { CollectionService } from './collectionService';
+import { requestManager } from '../utils/requestManager';
 
 export class ArticleService {
   /**
    * 获取所有文章
    */
   static async getArticles(params = {}): Promise<{ data: Article[]; pagination: any }> {
-    try {
-      return await api.getArticles(params);
-    } catch (error) {
-      console.error('Network error fetching articles:', error);
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+    const key = `getArticles-${JSON.stringify(params)}`;
+    return requestManager.execute(key, async () => {
+      try {
+        return await api.getArticles(params);
+      } catch (error) {
+        console.error('Network error fetching articles:', error);
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   /**

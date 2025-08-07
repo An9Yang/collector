@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Collection, CollectionInsert, CollectionUpdate } from '../types';
 import { CollectionService } from '../services/collectionService';
 
@@ -47,9 +47,10 @@ export const CollectionsProvider: React.FC<CollectionsProviderProps> = ({ childr
   const [collections, setCollections] = useState<Collection[]>([]);
   const [currentCollection, setCurrentCollection] = useState<Collection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCollections = async () => {
+  const loadCollections = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -57,21 +58,24 @@ export const CollectionsProvider: React.FC<CollectionsProviderProps> = ({ childr
       const data = await CollectionService.getCollections();
       setCollections(data);
       
-      // 如果没有当前收藏夹，设置默认收藏夹
-      if (!currentCollection) {
-        const defaultCollection = data.find(c => c.is_default);
-        if (defaultCollection) {
-          setCurrentCollection(defaultCollection);
+      // 设置默认收藏夹，使用函数式更新避免依赖
+      setCurrentCollection((prev) => {
+        if (!prev) {
+          const defaultCollection = data.find(c => c.is_default);
+          return defaultCollection || null;
         }
-      }
+        return prev;
+      });
+      setHasInitialized(true);
     } catch (error) {
       console.error('Error loading collections:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load collections';
       setError(errorMessage);
+      // 不自动重试，避免429错误
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // 移除所有依赖
 
   const createCollection = async (data: CollectionInsert): Promise<Collection> => {
     setIsLoading(true);
@@ -123,13 +127,22 @@ export const CollectionsProvider: React.FC<CollectionsProviderProps> = ({ childr
     
     try {
       await CollectionService.deleteCollection(id);
-      setCollections(prev => prev.filter(collection => collection.id !== id));
       
-      // 如果删除的是当前收藏夹，切换到默认收藏夹
-      if (currentCollection && currentCollection.id === id) {
-        const defaultCollection = collections.find(c => c.is_default && c.id !== id);
-        setCurrentCollection(defaultCollection || null);
-      }
+      // 使用函数式更新来同时处理 collections 和 currentCollection
+      setCollections(prev => {
+        const newCollections = prev.filter(collection => collection.id !== id);
+        
+        // 如果删除的是当前收藏夹，需要更新 currentCollection
+        if (currentCollection && currentCollection.id === id) {
+          const defaultCollection = newCollections.find(c => c.is_default);
+          // 异步更新 currentCollection
+          setTimeout(() => {
+            setCurrentCollection(defaultCollection || null);
+          }, 0);
+        }
+        
+        return newCollections;
+      });
     } catch (error) {
       console.error('Error deleting collection:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete collection';
@@ -173,9 +186,9 @@ export const CollectionsProvider: React.FC<CollectionsProviderProps> = ({ childr
     }
   };
 
-  const getArticlesByCollection = async (collectionId: string) => {
+  const getArticlesByCollection = useCallback(async (collectionId: string) => {
     return await CollectionService.getArticlesByCollection(collectionId);
-  };
+  }, []);
 
   const getCollectionsByArticle = async (articleId: string): Promise<Collection[]> => {
     return await CollectionService.getCollectionsByArticle(articleId);
@@ -191,8 +204,11 @@ export const CollectionsProvider: React.FC<CollectionsProviderProps> = ({ childr
 
   // 初始化：加载收藏夹
   useEffect(() => {
-    loadCollections();
-  }, []);
+    if (!hasInitialized) {
+      console.log('Initializing collections...');
+      loadCollections();
+    }
+  }, []); // 只在组件挂载时执行
 
   return (
     <CollectionsContext.Provider

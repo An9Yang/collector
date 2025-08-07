@@ -28,25 +28,48 @@ function Main() {
 
   // 根据当前收藏夹过滤文章
   useEffect(() => {
+    let isActive = true;
+    
     const loadArticlesForCurrentCollection = async () => {
+      if (!isActive) return;
+      
       setIsLoadingCollection(true);
       try {
         if (currentCollection) {
           const collectionArticles = await getArticlesByCollection(currentCollection.id);
-          setFilteredArticles(collectionArticles);
+          if (isActive) {
+            setFilteredArticles(collectionArticles);
+          }
         } else {
-          setFilteredArticles(articles);
+          if (isActive) {
+            setFilteredArticles(articles);
+          }
         }
       } catch (error) {
         console.error('Error loading articles for collection:', error);
-        setFilteredArticles([]);
+        if (isActive) {
+          setFilteredArticles([]);
+        }
       } finally {
-        setIsLoadingCollection(false);
+        if (isActive) {
+          setIsLoadingCollection(false);
+        }
       }
     };
 
     loadArticlesForCurrentCollection();
-  }, [currentCollection, articles, getArticlesByCollection]);
+    
+    return () => {
+      isActive = false;
+    };
+  }, [currentCollection?.id, getArticlesByCollection, articles]); // 添加所有必要的依赖
+  
+  // 单独的effect来更新文章列表（当没有选择收藏夹时）
+  useEffect(() => {
+    if (!currentCollection) {
+      setFilteredArticles(articles);
+    }
+  }, [articles, currentCollection]);
 
   // 主题切换逻辑
   useEffect(() => {
