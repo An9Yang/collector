@@ -10,6 +10,7 @@ import ChatPanel from './components/ChatPanel';
 import Button from './components/ui/Button';
 import { Plus, Moon, Sun, MessageCircle, X, Menu } from 'lucide-react';
 import { Article } from './types';
+import { debugEnvironmentVariables } from './utils/debugEnv';
 
 function Main() {
   const [isAddLinkModalOpen, setIsAddLinkModalOpen] = useState(false);
@@ -25,6 +26,11 @@ function Main() {
     getArticlesByCollection,
     addArticleToCollection 
   } = useCollections();
+
+  // 调试环境变量（仅在开发环境显示）
+  useEffect(() => {
+    debugEnvironmentVariables();
+  }, []);
 
   // 根据当前收藏夹过滤文章
   useEffect(() => {
