@@ -24,9 +24,9 @@ export async function getAzureOpenAIChatCompletion(
       },
       body: JSON.stringify({
         messages: messages,
-        // GPT-5-mini 配置 
-        max_completion_tokens: 100000,  // 模型最大支持 100000 tokens
-        // 不设置其他参数，让模型使用默认值
+        // GPT-5-mini 配置 - 不限制输出，让模型使用最大能力
+        // 根据最新模型趋势，GPT-5系列应该支持至少200K上下文和100K输出
+        // 不设置max_completion_tokens，让模型自行决定最佳输出长度
       }),
     });
 
