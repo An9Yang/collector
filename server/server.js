@@ -22,16 +22,35 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:3000',
-      'http://localhost:3001'
+      'http://localhost:3001',
+      // Vercel部署的域名
+      'https://collector-siik-annan-team.vercel.app',
+      'https://collector-siik.vercel.app',
+      // 允许所有Vercel预览部署
+      /^https:\/\/collector-.*\.vercel\.app$/
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost:')) {
+    // Check if origin matches any allowed origin
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed || origin.startsWith('http://localhost:')) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // 生产环境下，为了调试，暂时允许所有源
+      // TODO: 部署稳定后，移除这行
+      if (process.env.NODE_ENV === 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true

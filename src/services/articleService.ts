@@ -1,7 +1,11 @@
 import { api } from './api';
+import { SupabaseService } from './supabaseService';
 import type { Article, ArticleInsert, ArticleUpdate } from '../types';
 import { CollectionService } from './collectionService';
 import { requestManager } from '../utils/requestManager';
+
+// 检查是否使用直连Supabase模式
+const USE_SUPABASE_DIRECT = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === 'direct';
 
 export class ArticleService {
   /**
@@ -11,6 +15,9 @@ export class ArticleService {
     const key = `getArticles-${JSON.stringify(params)}`;
     return requestManager.execute(key, async () => {
       try {
+        if (USE_SUPABASE_DIRECT) {
+          return await SupabaseService.getArticles(params);
+        }
         return await api.getArticles(params);
       } catch (error) {
         console.error('Network error fetching articles:', error);
@@ -27,6 +34,9 @@ export class ArticleService {
    */
   static async getArticleById(id: string): Promise<Article | null> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.getArticle(id);
+      }
       return await api.getArticle(id);
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -51,10 +61,15 @@ export class ArticleService {
         }
       }
 
-      const article = await api.createArticle({
-        ...articleData,
-        collection_ids: collectionIds
-      });
+      const article = USE_SUPABASE_DIRECT 
+        ? await SupabaseService.createArticle({
+            ...articleData,
+            collection_ids: collectionIds
+          })
+        : await api.createArticle({
+            ...articleData,
+            collection_ids: collectionIds
+          });
 
       return article;
     } catch (error) {
@@ -70,6 +85,9 @@ export class ArticleService {
    */
   static async updateArticle(id: string, updates: ArticleUpdate): Promise<Article> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.updateArticle(id, updates);
+      }
       return await api.updateArticle(id, updates);
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -84,7 +102,11 @@ export class ArticleService {
    */
   static async deleteArticle(id: string): Promise<void> {
     try {
-      await api.deleteArticle(id);
+      if (USE_SUPABASE_DIRECT) {
+        await SupabaseService.deleteArticle(id);
+      } else {
+        await api.deleteArticle(id);
+      }
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
@@ -114,7 +136,10 @@ export class ArticleService {
     try {
       // Server-side filtering by tags
       const results = await Promise.all(
-        tags.map(tag => api.getArticlesByTag(tag))
+        tags.map(tag => USE_SUPABASE_DIRECT 
+          ? SupabaseService.getArticlesByTag(tag)
+          : api.getArticlesByTag(tag)
+        )
       );
       
       // Merge and deduplicate results
@@ -141,7 +166,9 @@ export class ArticleService {
     try {
       // For now, do client-side search
       // TODO: Add server-side full-text search endpoint
-      const { data } = await api.getArticles();
+      const { data } = USE_SUPABASE_DIRECT 
+        ? await SupabaseService.getArticles()
+        : await api.getArticles();
       const lowercaseQuery = query.toLowerCase();
       
       return data.filter(article => 
@@ -182,7 +209,9 @@ export class ArticleService {
    * 按来源筛选文章
    */
   static async getArticlesBySource(source: 'wechat' | 'linkedin' | 'reddit' | 'other'): Promise<Article[]> {
-    const { data } = await api.getArticles({ source });
+    const { data } = USE_SUPABASE_DIRECT
+      ? await SupabaseService.getArticles({ source })
+      : await api.getArticles({ source });
     return data;
   }
 
@@ -190,7 +219,9 @@ export class ArticleService {
    * 获取未读文章
    */
   static async getUnreadArticles(): Promise<Article[]> {
-    const { data } = await api.getArticles({ is_read: false });
+    const { data } = USE_SUPABASE_DIRECT
+      ? await SupabaseService.getArticles({ is_read: false })
+      : await api.getArticles({ is_read: false });
     return data;
   }
 }

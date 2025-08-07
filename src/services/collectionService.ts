@@ -1,6 +1,10 @@
 import { api } from './api';
+import { SupabaseService } from './supabaseService';
 import type { Collection, CollectionInsert, CollectionUpdate, Article } from '../types';
 import { requestManager } from '../utils/requestManager';
+
+// 检查是否使用直连Supabase模式
+const USE_SUPABASE_DIRECT = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === 'direct';
 
 export class CollectionService {
   /**
@@ -9,6 +13,9 @@ export class CollectionService {
   static async getCollections(): Promise<Collection[]> {
     return requestManager.execute('getCollections', async () => {
       try {
+        if (USE_SUPABASE_DIRECT) {
+          return await SupabaseService.getCollections();
+        }
         return await api.getCollections();
       } catch (error) {
         console.error('Network error fetching collections:', error);
@@ -25,6 +32,9 @@ export class CollectionService {
    */
   static async getCollectionById(id: string): Promise<Collection | null> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.getCollection(id);
+      }
       const collection = await api.getCollection(id);
       return collection;
     } catch (error) {
@@ -40,6 +50,9 @@ export class CollectionService {
    */
   static async createCollection(collectionData: CollectionInsert): Promise<Collection> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.createCollection(collectionData);
+      }
       return await api.createCollection(collectionData);
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -54,6 +67,9 @@ export class CollectionService {
    */
   static async updateCollection(id: string, updates: CollectionUpdate): Promise<Collection> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.updateCollection(id, updates);
+      }
       return await api.updateCollection(id, updates);
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -68,7 +84,11 @@ export class CollectionService {
    */
   static async deleteCollection(id: string): Promise<void> {
     try {
-      await api.deleteCollection(id);
+      if (USE_SUPABASE_DIRECT) {
+        await SupabaseService.deleteCollection(id);
+      } else {
+        await api.deleteCollection(id);
+      }
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
@@ -82,7 +102,11 @@ export class CollectionService {
    */
   static async addArticleToCollection(articleId: string, collectionId: string): Promise<void> {
     try {
-      await api.addArticleToCollection(collectionId, articleId);
+      if (USE_SUPABASE_DIRECT) {
+        await SupabaseService.addArticleToCollection(articleId, collectionId);
+      } else {
+        await api.addArticleToCollection(collectionId, articleId);
+      }
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
@@ -96,7 +120,11 @@ export class CollectionService {
    */
   static async removeArticleFromCollection(articleId: string, collectionId: string): Promise<void> {
     try {
-      await api.removeArticleFromCollection(collectionId, articleId);
+      if (USE_SUPABASE_DIRECT) {
+        await SupabaseService.removeArticleFromCollection(articleId, collectionId);
+      } else {
+        await api.removeArticleFromCollection(collectionId, articleId);
+      }
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your internet connection and try again.');
@@ -110,6 +138,9 @@ export class CollectionService {
    */
   static async getArticlesByCollection(collectionId: string, params = {}): Promise<Article[]> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.getArticlesByCollection(collectionId);
+      }
       // 添加默认排序参数
       const defaultParams = {
         sortBy: 'created_at',
@@ -131,6 +162,9 @@ export class CollectionService {
    */
   static async getCollectionsByArticle(articleId: string): Promise<Collection[]> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.getCollectionsByArticle(articleId);
+      }
       // Get all collections and filter client-side for now
       // TODO: Add server endpoint for this
       const collections = await api.getCollections();
@@ -153,6 +187,9 @@ export class CollectionService {
    */
   static async getDefaultCollection(): Promise<Collection | null> {
     try {
+      if (USE_SUPABASE_DIRECT) {
+        return await SupabaseService.getDefaultCollection();
+      }
       const collections = await this.getCollections();
       let defaultCollection = collections.find(c => c.name === 'Default Collection');
       
@@ -174,8 +211,12 @@ export class CollectionService {
    * 移动文章到另一个收藏夹
    */
   static async moveArticleToCollection(articleId: string, fromCollectionId: string, toCollectionId: string): Promise<void> {
-    // 先删除再添加，确保操作的原子性
-    await this.removeArticleFromCollection(articleId, fromCollectionId);
-    await this.addArticleToCollection(articleId, toCollectionId);
+    if (USE_SUPABASE_DIRECT) {
+      await SupabaseService.moveArticleToCollection(articleId, fromCollectionId, toCollectionId);
+    } else {
+      // 先删除再添加，确保操作的原子性
+      await this.removeArticleFromCollection(articleId, fromCollectionId);
+      await this.addArticleToCollection(articleId, toCollectionId);
+    }
   }
 }
