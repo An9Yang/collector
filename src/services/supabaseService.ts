@@ -120,10 +120,7 @@ export class SupabaseService {
   static async getCollections(): Promise<Collection[]> {
     const { data, error } = await supabase
       .from('collections')
-      .select(`
-        *,
-        article_collections(count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -265,12 +262,17 @@ export class SupabaseService {
       .select(`
         articles (*)
       `)
-      .eq('collection_id', collectionId)
-      .order('created_at', { ascending: false });
+      .eq('collection_id', collectionId);
 
     if (error) throw error;
 
-    return (data || []).map(item => item.articles).filter(Boolean).flat();
+    // 获取文章后，按文章的created_at排序
+    const articles = (data || []).map(item => item.articles).filter(Boolean).flat();
+    return articles.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA; // 降序排序（最新的在前）
+    });
   }
 
   static async getCollectionsByArticle(articleId: string): Promise<Collection[]> {
